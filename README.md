@@ -1,4 +1,4 @@
-FinanceFlow
+#FinanceFlow
 
 FinanceFlow è una web app per la gestione di budget, carte, transazioni, trading, con supporto offline.
 
@@ -24,8 +24,8 @@ npm install
 ```
 
 ### 3. Aggiungi i file .env
-La prima parte del file .env va inserita nella cartella backend
-La seconda parte va inserita nella cartella src
+- La prima parte del file .env va inserita nella cartella backend
+- La seconda parte va inserita nella cartella src
 
 ### 4. Avvia il backend
 ```bash
@@ -45,7 +45,7 @@ npm start
 
 
 ### 6. Credenziali di test
-**Email:** `prova@test.com`
-**Password:** `123456`
+- **Email:** `prova@test.com`
+- **Password:** `123456`
 
 
