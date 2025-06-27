@@ -1,0 +1,47 @@
+{
+  "short_name": "FinanceLow",
+  "name": "FinanceLow - Gestione Budget e Finanze Personali",
+  "description": "App per gestire budget, transazioni e trading crypto",
+  "icons": [
+    {
+      "src": "icon-192.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": "/",
+  "display": "standalone",
+  "theme_color": "#1e3a8a",
+  "background_color": "#0f172a",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "categories": ["finance", "productivity", "business"],
+  "prefer_related_applications": false,
+  "display_override": ["window-controls-overlay", "standalone"],
+  "launch_handler": {
+    "client_mode": "navigate-existing"
+  },
+  "shortcuts": [
+    {
+      "name": "Dashboard",
+      "short_name": "Dashboard",
+      "description": "Visualizza il dashboard principale",
+      "url": "/dashboard",
+      "icons": [{ "src": "icon-192.svg", "sizes": "32x32" }]
+    },
+    {
+      "name": "Transazioni",
+      "short_name": "Transazioni",
+      "description": "Gestisci le tue transazioni",
+      "url": "/transazioni",
+      "icons": [{ "src": "icon-192.svg", "sizes": "32x32" }]
+    }
+  ]
+}
