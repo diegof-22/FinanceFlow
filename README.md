@@ -12,7 +12,7 @@ FinanceFlow è una web app per la gestione di budget, carte, transazioni, tradin
 ### 1. Clona il repository in locale
 ```bash
  git clone <repo-url>
- cd Financelow
+ cd FinanceFlow
 ```
 
 ### 2. Installa le dipendenze
