@@ -75,7 +75,7 @@ export const precacheResource = async (url: string): Promise<boolean> => {
 
   try {
     const cache = await caches.open('financelow-runtime-v6-ultra-safe');
-    const API_BASE_URL = "https://financeflow-yeqs.onrender.com";
+    const API_BASE_URL = "https://financeflowbackend-7q99.onrender.com";
     const response = await fetch(url.startsWith('/api/') ? `${API_BASE_URL}${url}` : url);
     
     if (response.ok) {

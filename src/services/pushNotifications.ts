@@ -1,6 +1,6 @@
 import { getAuth } from 'firebase/auth';
 
-const API_BASE_URL = "https://financeflow-yeqs.onrender.com";
+const API_BASE_URL = "https://financeflowbackend-7q99.onrender.com";
 
 function urlBase64ToUint8Array(base64String: string): Uint8Array {
   const padding = '='.repeat((4 - base64String.length % 4) % 4);

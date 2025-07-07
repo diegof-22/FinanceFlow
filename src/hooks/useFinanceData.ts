@@ -5,7 +5,7 @@ import indexedDBService, {
   SyncOperation,
 } from "@/services/indexedDBService";
 
-const API_BASE_URL = "https://financeflow-yeqs.onrender.com";
+const API_BASE_URL = "https://financeflowbackend-7q99.onrender.com";
 
 const resourceMap = {
   card: { url: `${API_BASE_URL}/api/cards` },
