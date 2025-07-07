@@ -1,5 +1,7 @@
 import { getAuth } from 'firebase/auth';
 
+const API_BASE_URL = "https://financeflow-yeqs.onrender.com";
+
 function urlBase64ToUint8Array(base64String: string): Uint8Array {
   const padding = '='.repeat((4 - base64String.length % 4) % 4);
   const base64 = (base64String + padding)
@@ -27,7 +29,7 @@ class PushNotificationService {
   }
 
   async fetchVapidPublicKey(idToken: string): Promise<string> {
-    const response = await fetch('/api/webpush/vapid-public-key', {
+    const response = await fetch(`${API_BASE_URL}/api/webpush/vapid-public-key`, {
       headers: { 'Authorization': `Bearer ${idToken}` }
     });
     const data = await response.json();
@@ -97,7 +99,7 @@ class PushNotificationService {
       const subscription = await this.subscribeToPushNotifications(registration, vapidKey);
       if (!subscription) return null;
      
-      await fetch('/api/webpush/subscription', {
+      await fetch(`${API_BASE_URL}/api/webpush/subscription`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

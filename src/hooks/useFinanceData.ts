@@ -5,12 +5,13 @@ import indexedDBService, {
   SyncOperation,
 } from "@/services/indexedDBService";
 
+const API_BASE_URL = "https://financeflow-yeqs.onrender.com";
 
 const resourceMap = {
-  card: { url: "/api/cards" },
-  account: { url: "/api/accounts" },
-  transaction: { url: "/api/transactions" },
-  budget: { url: "/api/budgets" },
+  card: { url: `${API_BASE_URL}/api/cards` },
+  account: { url: `${API_BASE_URL}/api/accounts` },
+  transaction: { url: `${API_BASE_URL}/api/transactions` },
+  budget: { url: `${API_BASE_URL}/api/budgets` },
 };
 
 type ResourceType = "card" | "account" | "transaction" | "budget";
@@ -100,7 +101,7 @@ export function useFinanceData() {
     headers: Record<string, string>
   ): Promise<boolean> => {
     try {
-      const response = await fetch("/api/health", {
+      const response = await fetch(`${API_BASE_URL}/api/health`, {
         method: "GET",
         headers,
         timeout: 5000,
@@ -255,10 +256,10 @@ export function useFinanceData() {
             }
 
             const [c, a, t, b] = await Promise.all([
-            fetch("/api/cards", { headers }).then((r) => (r.ok ? r.json() : [])),
-            fetch("/api/accounts", { headers }).then((r) => (r.ok ? r.json() : [])),
-            fetch("/api/transactions", { headers }).then((r) => (r.ok ? r.json() : [])),
-            fetch("/api/budgets", { headers }).then((r) => (r.ok ? r.json() : [])),
+            fetch(`${API_BASE_URL}/api/cards`, { headers }).then((r) => (r.ok ? r.json() : [])),
+            fetch(`${API_BASE_URL}/api/accounts`, { headers }).then((r) => (r.ok ? r.json() : [])),
+            fetch(`${API_BASE_URL}/api/transactions`, { headers }).then((r) => (r.ok ? r.json() : [])),
+            fetch(`${API_BASE_URL}/api/budgets`, { headers }).then((r) => (r.ok ? r.json() : [])),
           ]);
 
           const deduplicatedTransactions = deduplicateTransactions(Array.isArray(t) ? t : []);
@@ -603,10 +604,10 @@ export function useFinanceData() {
       const headers = await getAuthHeaders();
       if (Object.keys(headers).length > 0) {
         const [c, a, t, b] = await Promise.all([
-          fetch("/api/cards", { headers }).then((r) => (r.ok ? r.json() : [])),
-          fetch("/api/accounts", { headers }).then((r) => (r.ok ? r.json() : [])),
-          fetch("/api/transactions", { headers }).then((r) => (r.ok ? r.json() : [])),
-          fetch("/api/budgets", { headers }).then((r) => (r.ok ? r.json() : [])),
+          fetch(`${API_BASE_URL}/api/cards`, { headers }).then((r) => (r.ok ? r.json() : [])),
+          fetch(`${API_BASE_URL}/api/accounts`, { headers }).then((r) => (r.ok ? r.json() : [])),
+          fetch(`${API_BASE_URL}/api/transactions`, { headers }).then((r) => (r.ok ? r.json() : [])),
+          fetch(`${API_BASE_URL}/api/budgets`, { headers }).then((r) => (r.ok ? r.json() : [])),
         ]);
 
         const filterTempIds = (arr: any[]) => (Array.isArray(arr) ? arr.filter(e => e && e.id && !e.id.toString().startsWith('temp_')) : []);
