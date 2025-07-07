@@ -20,14 +20,7 @@ if ('serviceWorker' in navigator) {
       if (registration.waiting) {
         registration.waiting.postMessage({ type: 'SKIP_WAITING' });
       }
-      
-     
-      
-  
-      navigator.serviceWorker.addEventListener('controllerchange', () => {
-        console.log('Service Worker controller cambiato - ricaricando...');
-        window.location.reload();
-      });
+    
       
     } catch (registrationError) {
       console.log('Registrazione SW fallita:', registrationError);
