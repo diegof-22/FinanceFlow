@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate, useLocation, Outlet } from "react-router-dom";
+ import { BrowserRouter, Routes, Route, Navigate, useLocation, Outlet } from "react-router-dom";
 import { AuthProvider, useAuth } from "./lib/firebase";
 import { SidebarProvider } from "./contexts/SidebarContext";
 import { FinanceDataProvider } from "./contexts/FinanceDataContext";
@@ -21,16 +21,7 @@ import Profile from "./pages/Profile";
 import { useFinanceDataContext } from "@/contexts/FinanceDataContext";
 import React, { useEffect, useState } from "react";
 
-function DataSyncer() {
-  const location = useLocation();
-  const { isOffline, reloadOfflineData } = useFinanceDataContext();
-  useEffect(() => {
-    if (isOffline) {
-      reloadOfflineData();
-    }
-  }, [isOffline, location.pathname, reloadOfflineData]);
-  return null;
-}
+
 
 function NotificationPermissionWatcher() {
   const [permission, setPermission] = useState(Notification.permission);
@@ -81,7 +72,7 @@ const AppRouter = () => {
   return (
     <SidebarProvider>
       <FinanceDataProvider>
-        <DataSyncer />
+        
         <NotificationPermissionWatcher />
         <Routes>
           

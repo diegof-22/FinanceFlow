@@ -346,9 +346,7 @@ export function useFinanceData() {
       
       console.log('Passaggio online rilevato, sincronizzazione in corso...');
       
-      syncQueue().then(() => {
-        refreshData();
-      });
+      syncQueue();
     }
   }, [isOffline, dataLoaded]);
 
@@ -464,6 +462,16 @@ export function useFinanceData() {
         });
       }
 
+      
+      await saveSnapshot(
+        newCards,
+        newAccounts,
+        newTransactions,
+        newBudgets,
+        new Date(),
+        userEmail
+      );
+
       const { url } = resourceMap[resource];
       try {
         const headers = await getAuthHeaders();
@@ -478,6 +486,8 @@ export function useFinanceData() {
           }
           const saved = await res.json();
           setState((prev) => prev.map((e) => (e.id === data.id ? saved : e)));
+          
+          // Aggiorna snapshot con ID reale
           const updatedCards =
             resource === "card"
               ? [...newCards.filter((e) => e.id !== data.id), saved]
@@ -494,55 +504,33 @@ export function useFinanceData() {
             resource === "budget"
               ? [...newBudgets.filter((e) => e.id !== data.id), saved]
               : newBudgets;
+
+         
           await saveSnapshot(
             updatedCards,
             updatedAccounts,
             updatedTransactions,
             updatedBudgets,
             new Date(),
-            userEmail
+            userEmail,
+            true 
           );
         }
         if (action === "delete") {
           if (data.id && !data.id.startsWith("temp_")) {
             try {
-            const res = await fetch(`${url}/${data.id}`, {
-              method: "DELETE",
-              headers,
-            });
-            if (!res.ok) {
+              const res = await fetch(`${url}/${data.id}`, {
+                method: "DELETE",
+                headers,
+              });
+              if (!res.ok) {
                 throw new Error(`HTTP ${res.status}: ${await res.text()}`);
               }
             } catch (error) {
               console.error('Error deleting from API:', error);
+              throw error; 
             }
           }
-
-          const finalCards =
-            resource === "card"
-              ? newCards.filter((e) => e.id !== data.id)
-              : newCards;
-          const finalAccounts =
-            resource === "account"
-              ? newAccounts.filter((e) => e.id !== data.id)
-              : newAccounts;
-          const finalTransactions =
-            resource === "transaction"
-              ? newTransactions.filter((e) => e.id !== data.id)
-              : newTransactions;
-          const finalBudgets =
-            resource === "budget"
-              ? newBudgets.filter((e) => e.id !== data.id)
-              : newBudgets;
-
-          await saveSnapshot(
-            finalCards,
-            finalAccounts,
-            finalTransactions,
-            finalBudgets,
-            new Date(),
-            userEmail
-          );
         }
         if (action === "update") {
           const res = await fetch(`${url}/${data.id}`, {
@@ -551,50 +539,18 @@ export function useFinanceData() {
             body: JSON.stringify(data.updates),
           });
           if (!res.ok) {
-              setState((prev) => prev.filter((e) => e.id !== data.id));
+            setState((prev) => prev.filter((e) => e.id !== data.id));
             throw new Error(`HTTP ${res.status}: ${await res.text()}`);
           }
-          await saveSnapshot(
-            resource === "card"
-              ? newCards.map((e) =>
-                  e.id === data.id ? { ...e, ...data.updates } : e
-                )
-              : newCards,
-            resource === "account"
-              ? newAccounts.map((e) =>
-                  e.id === data.id ? { ...e, ...data.updates } : e
-                )
-              : newAccounts,
-            resource === "transaction"
-              ? newTransactions.map((e) =>
-                  e.id === data.id ? { ...e, ...data.updates } : e
-                )
-              : newTransactions,
-            resource === "budget"
-              ? newBudgets.map((e) =>
-                  e.id === data.id ? { ...e, ...data.updates } : e
-                )
-              : newBudgets,
-            new Date(),
-            userEmail
-          );
         }
       } catch (error) {
-        console.error(error);
+        console.error('Errore API, aggiungendo alla syncQueue:', error);
         await indexedDBService.addToSyncQueue({
           type: actionTypeToSyncType(resource, action),
           data,
           userEmail,
           timestamp: new Date(),
         });
-        await saveSnapshot(
-          newCards,
-          newAccounts,
-          newTransactions,
-          newBudgets,
-          new Date(),
-          userEmail
-        );
       }
     },
     [isOffline, userEmail, cards, accounts, transactions, budgets, saveSnapshot]
@@ -663,16 +619,6 @@ export function useFinanceData() {
         setAccounts(filteredAccounts);
         setTransactions(filteredTransactions);
         setBudgetsState(filteredBudgets);
-
-        await saveSnapshot(
-          filteredCards,
-          filteredAccounts,
-          filteredTransactions,
-          filteredBudgets,
-          new Date(),
-          userEmail,
-          true
-        );
       }
     } catch (error) {
       console.error('Errore nel ricaricamento dati post-sync:', error);
@@ -707,19 +653,30 @@ export function useFinanceData() {
     return true;
   };
   const deleteCard = async (id: string): Promise<boolean> => {
+    console.log('deleteCard chiamata, isOffline:', isOffline, 'id:', id);
     if (!id) {
       console.error('deleteCard: ID is required');
       return false;
     }
     if (isOffline) {
-      setCards(prev => prev.filter(card => card.id !== id));
+      const updated = cards.filter(card => card.id !== id);
+      setCards(updated);
       await indexedDBService.addToSyncQueue({
         type: "DELETE_CARD",
         data: { id },
         userEmail,
         timestamp: new Date(),
       });
-      await saveSnapshot(cards.filter(card => card.id !== id), accounts, transactions, budgets, new Date(), userEmail);
+      console.log('Azione DELETE_CARD aggiunta alla syncQueue');
+      await saveSnapshot(
+        updated,
+        accounts,
+        transactions,
+        budgets,
+        new Date(),
+        userEmail
+      );
+      console.log('Snapshot salvato dopo eliminazione carta offline');
       return true;
     }
     await handleAction("card", "delete", { id });
@@ -741,9 +698,31 @@ export function useFinanceData() {
     return true;
   };
   const deleteAccount = async (id: string): Promise<boolean> => {
+    console.log('deleteAccount chiamata, isOffline:', isOffline, 'id:', id);
     if (!id) {
       console.error('deleteAccount: ID is required');
       return false;
+    }
+    if (isOffline) {
+      const updated = accounts.filter(account => account.id !== id);
+      setAccounts(updated);
+      await indexedDBService.addToSyncQueue({
+        type: "DELETE_ACCOUNT",
+        data: { id },
+        userEmail,
+        timestamp: new Date(),
+      });
+      console.log('Azione DELETE_ACCOUNT aggiunta alla syncQueue');
+      await saveSnapshot(
+        cards,
+        updated,
+        transactions,
+        budgets,
+        new Date(),
+        userEmail
+      );
+      console.log('Snapshot salvato dopo eliminazione account offline');
+      return true;
     }
     await handleAction("account", "delete", { id });
     return true;
@@ -1036,53 +1015,7 @@ export function useFinanceData() {
       : 0;
   };
 
-  const refreshData = useCallback(async () => {
-    if (!user || isLoading) return;
 
-    setIsLoading(true);
-
-    try {
-      const headers = await getAuthHeaders();
-      if (Object.keys(headers).length === 0) {
-        setIsLoading(false);
-        return;
-      }
-
-      const [c, a, t, b] = await Promise.all([
-        fetch("/api/cards", { headers })
-          .then((r) => (r.ok ? r.json() : []))
-          .catch(() => []),
-        fetch("/api/accounts", { headers })
-          .then((r) => (r.ok ? r.json() : []))
-          .catch(() => []),
-        fetch("/api/transactions", { headers })
-          .then((r) => (r.ok ? r.json() : []))
-          .catch(() => []),
-        fetch("/api/budgets", { headers })
-          .then((r) => (r.ok ? r.json() : []))
-          .catch(() => []),
-      ]);
-
-      const filterTempIds = (arr: any[]) => (Array.isArray(arr) ? arr.filter(e => e && e.id && !e.id.toString().startsWith('temp_')) : []);
-      const filteredCards = filterTempIds(c);
-      const filteredAccounts = filterTempIds(a);
-      const filteredTransactions = filterTempIds(t);
-      const filteredBudgets = filterTempIds(b);
-
-      setCards(filteredCards);
-      setAccounts(filteredAccounts);
-      setTransactions(filteredTransactions);
-      setBudgetsState(filteredBudgets);
-
-      const syncTime = new Date();
-      await saveSnapshot(filteredCards, filteredAccounts, filteredTransactions, filteredBudgets, syncTime, userEmail, true);
-      setLastSync(syncTime);
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [user, isLoading, userEmail]);
 
   const clearAllData = async () => {
     setCards([]);

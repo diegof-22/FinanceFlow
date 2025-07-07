@@ -35,11 +35,7 @@ export default function Budgets() {
     getMonthlyExpenses,
   } = useFinanceDataContext();
 
-  useEffect(() => {
-    if (isOffline) {
-      reloadOfflineData();
-    }
-  }, [isOffline, reloadOfflineData]);
+  // La gestione offline è già centralizzata in FinanceDataContext
 
   const budgets = Array.isArray(budgetArray) && budgetArray.length > 0 
     ? budgetArray.reduce((acc, budget) => {

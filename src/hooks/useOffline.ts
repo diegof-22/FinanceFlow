@@ -17,7 +17,7 @@ export const useOffline = (): OfflineState => {
       
       
       if (wasOffline) {
-        console.log('✅ Riconnesso! Sincronizzazione in corso...');
+        console.log(' Riconnesso! Sincronizzazione in corso...');
 
       }
     };

@@ -21,26 +21,7 @@ if ('serviceWorker' in navigator) {
         registration.waiting.postMessage({ type: 'SKIP_WAITING' });
       }
       
-      registration.addEventListener('updatefound', () => {
-        const newWorker = registration.installing;
-        if (newWorker) {
-          newWorker.addEventListener('statechange', () => {
-            if (newWorker.state === 'installed') {
-              console.log('Nuovo service worker installato');
-              if (navigator.serviceWorker.controller) {
-                
-                if (window.confirm('È disponibile un aggiornamento dell\'app. Vuoi ricaricare?')) {
-                  newWorker.postMessage({ type: 'SKIP_WAITING' });
-                  window.location.reload();
-                }
-              } else {
-                
-                newWorker.postMessage({ type: 'SKIP_WAITING' });
-              }
-            }
-          });
-        }
-      });
+     
       
   
       navigator.serviceWorker.addEventListener('controllerchange', () => {

@@ -100,6 +100,7 @@ export interface BudgetData {
   [category: string]: number;
 }
 
+//Non usato
 
 export const convertCardData = (cardData: CardData): CardInput => ({
   cardName: cardData.cardName,

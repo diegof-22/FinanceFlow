@@ -138,7 +138,7 @@ async function sendScheduledNotification(){
       {
         notification: {
           title: 'Ricordati di aggiungere i nuovi pagamenti!',
-          body: 'Questa è una notifica inviata automaticamente ogni ora!',
+          body: 'Questa è una notifica inviata automaticamente ogni 2 minuti!',
           url: '/dashboard'
         }
       },

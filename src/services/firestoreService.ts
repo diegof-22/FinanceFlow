@@ -17,7 +17,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 
-
+ //Non utilizzato, completamente sostituito con API
 export interface FirestoreCard {
   id: string;
   name: string;
