@@ -153,7 +153,7 @@ async function sendScheduledNotification(){
   }
 }
 
-setInterval(sendScheduledNotification, 2* 60 * 1000);
+//setInterval(sendScheduledNotification, 2* 60 * 1000);
 
 
 const PORT = process.env.PORT || 5000;
