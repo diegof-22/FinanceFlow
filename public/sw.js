@@ -1,40 +1,26 @@
-const CACHE_VERSION = 'v9';
-const CACHE_NAME = `financelow-${CACHE_VERSION}-ultra-safe`;
+const CACHE_VERSION = 'v10';
 const STATIC_CACHE = `financelow-static-${CACHE_VERSION}-ultra-safe`;
 const RUNTIME_CACHE = `financelow-runtime-${CACHE_VERSION}-ultra-safe`;
 
 const urlsToCache = [
   '/',
+  '/index.html',
   '/manifest.json',
   '/favicon.ico',
-  '/index.html',
 ];
 
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    Promise.all([
-      caches.open(STATIC_CACHE).then((cache) => {
-        return Promise.allSettled(
-          urlsToCache.map(url => 
-            cache.add(url).catch(err => {
-              return null;
-            })
-          )
-        );
-      }),
-      
-      caches.open(RUNTIME_CACHE).then((cache) => {
-        return cache.add('/').catch(() => {});
-      })
-    ])
+    caches.open(STATIC_CACHE).then((cache) => {
+      return cache.addAll(urlsToCache);
+    })
     .then(() => self.skipWaiting())
-    .catch(error => {
-      console.error('Errore installazione Service Worker:', error);
+    .catch(err => {
+      console.error('Errore caching durante install:', err);
     })
   );
 });
-
 
 
 self.addEventListener('activate', (event) => {
@@ -42,7 +28,7 @@ self.addEventListener('activate', (event) => {
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames.map((cacheName) => {
-          if (cacheName !== CACHE_NAME && cacheName !== STATIC_CACHE && cacheName !== RUNTIME_CACHE) {
+          if (cacheName !== STATIC_CACHE && cacheName !== RUNTIME_CACHE) {
             return caches.delete(cacheName);
           }
         })
@@ -51,135 +37,98 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
-  
 
-  const isSafeToIntercept = 
-    request.method === 'GET' &&
-    
-    url.origin === location.origin &&
-   
-    (
-      
-      url.pathname.endsWith('.js') ||
-      url.pathname.endsWith('.css') ||
-      url.pathname.endsWith('.png') ||
-      url.pathname.endsWith('.jpg') ||
-      url.pathname.endsWith('.jpeg') ||
-      url.pathname.endsWith('.svg') ||
-      
-      url.pathname === '/' ||
-      url.pathname === '/index.html' ||
-      url.pathname === '/manifest.json'
-    ) &&
-
-    !url.search.includes('api') &&
-    !url.search.includes('token') &&
-    !url.search.includes('auth') &&
-    
-    request.headers.get('upgrade') !== 'websocket';
-
-
-  if (!isSafeToIntercept) {
-    return;
-  }
-
- 
 
   if (request.mode === 'navigate') {
     event.respondWith(
       fetch(request)
-        .then((response) => {
+        .then(response => {
           
           if (response.ok) {
             const responseClone = response.clone();
-            caches.open(RUNTIME_CACHE).then((cache) => {
-              cache.put(request, responseClone);
-            });
+            caches.open(RUNTIME_CACHE).then(cache => cache.put(request, responseClone));
           }
           return response;
         })
         .catch(() => {
-          
-          return caches.match('/index.html').then((cachedIndex) => {
-            if (cachedIndex) {
-              return cachedIndex;
-            }
-            
-            return caches.match('/index.html');
+          // Se fetch fallisce, fallback a index.html solo se presente in cache
+          return caches.match('/index.html').then(cachedResponse => {
+            if (cachedResponse) return cachedResponse;
+            return new Response('<h1>Sei offline e la pagina non è ancora stata caricata.</h1>', {
+              headers: { 'Content-Type': 'text/html' }
+            });
           });
         })
     );
+    return; // stop qui
   }
-  
 
-  else if (request.destination === 'script' || 
-           request.destination === 'style' || 
-           request.destination === 'image' ||
-           request.destination === 'font' ||
-           url.pathname.includes('/static/')) {
+  
+  if (
+    request.method !== 'GET' ||
+    url.origin !== location.origin ||
+    request.headers.get('upgrade') === 'websocket'
+  ) {
+    return;
+  }
+
+  
+  const staticAssetsExtensions = ['.js', '.css', '.png', '.jpg', '.jpeg', '.svg', '.woff', '.woff2', '.ttf', '.eot'];
+  const isStaticAsset = staticAssetsExtensions.some(ext => url.pathname.endsWith(ext)) || url.pathname.includes('/static/');
+
+  if (isStaticAsset) {
     event.respondWith(
-      caches.match(request).then((response) => {
-        if (response) {
-          return response;
+      caches.match(request).then(cachedResponse => {
+        if (cachedResponse) {
+          return cachedResponse;
         }
-        
-        return fetch(request).then((response) => {
-        
+        return fetch(request).then(response => {
           if (response.ok) {
             const responseClone = response.clone();
-            caches.open(RUNTIME_CACHE).then((cache) => {
-              cache.put(request, responseClone);
-            });
+            caches.open(RUNTIME_CACHE).then(cache => cache.put(request, responseClone));
           }
           return response;
         }).catch(() => {
-          
+          // Se è immagine, ritorna 404 vuoto per evitare errori brutti
           if (request.destination === 'image') {
             return new Response('', { status: 404 });
           }
-          throw new Error('Risorsa non disponibile offline');
+          // Altrimenti errore generico
+          return new Response('Risorsa non disponibile offline', { status: 503 });
         });
       })
     );
+    return;
   }
-  
-  
-  else {
-    event.respondWith(
-      fetch(request)
-        .then((response) => {
-          if (response.ok) {
-            const responseClone = response.clone();
-            caches.open(RUNTIME_CACHE).then((cache) => {
-              cache.put(request, responseClone);
-            });
-          }
-          return response;
-        })
-        .catch(() => {
-          return caches.match(request).then((response) => {
-            if (response) {
-              return response;
-            }
-            throw new Error('Risorsa non disponibile');
-          });
-        })
-    );
-  }
+
+  // Per tutte le altre richieste GET (API, dati, ecc.) fallback fetch + cache runtime
+  event.respondWith(
+    fetch(request)
+      .then(response => {
+        if (response.ok) {
+          const responseClone = response.clone();
+          caches.open(RUNTIME_CACHE).then(cache => cache.put(request, responseClone));
+        }
+        return response;
+      })
+      .catch(() => {
+        return caches.match(request).then(cachedResponse => {
+          if (cachedResponse) return cachedResponse;
+          return new Response('Risorsa non disponibile offline', { status: 503 });
+        });
+      })
+  );
 });
 
-
+// Push notification
 self.addEventListener('push', (event) => {
   if (!event.data) return;
 
   try {
     const data = event.data.json();
-    
-    
     const options = {
       body: data.body || '',
       icon: '/icon-192.png',
@@ -191,41 +140,27 @@ self.addEventListener('push', (event) => {
       renotify: true,
       requireInteraction: data.requireInteraction || false,
     };
-
-    event.waitUntil(
-      self.registration.showNotification(
-        data.title || 'Financelow',
-        options
-      )
-    );
+    event.waitUntil(self.registration.showNotification(data.title || 'Financelow', options));
   } catch (error) {
     console.error('Errore nella gestione della notifica push:', error);
   }
 });
 
-
+// Notification click
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
-
   const urlToOpen = event.notification.data.url || '/';
-
   event.waitUntil(
-    clients.matchAll({
-      type: 'window',
-      includeUncontrolled: true
-    })
-    .then((clientList) => {
-      
-      for (const client of clientList) {
-        if (client.url === urlToOpen && 'focus' in client) {
-          return client.focus();
+    clients.matchAll({ type: 'window', includeUncontrolled: true })
+      .then(clientList => {
+        for (const client of clientList) {
+          if (client.url === urlToOpen && 'focus' in client) {
+            return client.focus();
+          }
         }
-      }
-      
-      if (clients.openWindow) {
-        return clients.openWindow(urlToOpen);
-      }
-    })
+        if (clients.openWindow) {
+          return clients.openWindow(urlToOpen);
+        }
+      })
   );
 });
-
