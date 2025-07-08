@@ -4,27 +4,15 @@ import './index.css';
 import App from './App';
 
 if ('serviceWorker' in navigator) {
-  window.addEventListener('load', async () => {
-    try {
-      const registrations = await navigator.serviceWorker.getRegistrations();
-      for (let registration of registrations) {
-        await registration.unregister();
-      }
-      
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      const registration = await navigator.serviceWorker.register('/sw.js', {
-        scope: '/',
-        updateViaCache: 'none' 
-      });
-      
-      if (registration.waiting) {
-        registration.waiting.postMessage({ type: 'SKIP_WAITING' });
-      }
-    
-      
-    } catch (registrationError) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js', {
+      scope: '/',
+      updateViaCache: 'none'
+    }).then((registration) => {
+
+    }).catch((registrationError) => {
       console.log('Registrazione SW fallita:', registrationError);
-    }
+    });
   });
   
   

@@ -1,6 +1,7 @@
-const CACHE_NAME = 'financelow-v6-ultra-safe';
-const STATIC_CACHE = 'financelow-static-v6-ultra-safe';
-const RUNTIME_CACHE = 'financelow-runtime-v6-ultra-safe';
+const CACHE_VERSION = 'v8';
+const CACHE_NAME = `financelow-${CACHE_VERSION}-ultra-safe`;
+const STATIC_CACHE = `financelow-static-${CACHE_VERSION}-ultra-safe`;
+const RUNTIME_CACHE = `financelow-runtime-${CACHE_VERSION}-ultra-safe`;
 
 const urlsToCache = [
   '/',
