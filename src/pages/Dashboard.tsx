@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useAuth } from "../lib/firebase";
 import { useFinanceDataContext } from "@/contexts/FinanceDataContext";
 import { StatsCard } from "@/components/ui/stats-card";
@@ -22,9 +22,8 @@ import { FilterBar, FilterOption } from "@/components/ui/filter-bar";
 import { ConfirmModal } from "@/components/ui/confirm-modal";
 import { OfflineDataBanner } from "@/components/ui/offline-data-banner";
 
-
 import { Button } from "@/components/ui/button";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { NoCardorAccounts } from "@/components/complex/NoCardorAccounts";
 
 import {
@@ -46,6 +45,8 @@ import {
   Heart,
   Settings,
   PlusIcon,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { RecentTransactions } from "@/components/complex/Transactions";
@@ -62,8 +63,6 @@ import { createDashboardHandlers, type ConfirmModalState } from "@/utils/dashboa
 import { DashboardSkeleton } from '@/components/ui/skeleton';
 import {Card, Transaction, Account, Budget} from '@/types/finance'
 import { SetBudgetModal } from "@/components/modal/set-budget-modal";
-
-
 
 export const Dashboard = () => {
   
@@ -114,10 +113,33 @@ export const Dashboard = () => {
     budgetAmount: 0
   });
   const [isSetBudgetModalOpen, setIsSetBudgetModalOpen] = useState(false);
+  
+  // Stato per il carosello delle stats card
+  const [currentStatsIndex, setCurrentStatsIndex] = useState(0);
+  const [showStatsNavigation, setShowStatsNavigation] = useState(false);
+  const statsContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
+
+  // Controlla se le stats card necessitano di navigazione
+  useEffect(() => {
+    const checkStatsContainer = () => {
+      if (statsContainerRef.current) {
+        const containerWidth = statsContainerRef.current.offsetWidth;
+        const contentWidth = statsContainerRef.current.scrollWidth;
+        setShowStatsNavigation(contentWidth > containerWidth);
+      }
+    };
+
+    checkStatsContainer();
+    window.addEventListener('resize', checkStatsContainer);
+    
+    return () => {
+      window.removeEventListener('resize', checkStatsContainer);
+    };
+  }, [cards, accounts]);
 
   const handleEditCard = (card: Card) => {
     setSelectedCard(card);
@@ -214,6 +236,42 @@ export const Dashboard = () => {
     }
   };
 
+  // Funzioni per navigare le stats card
+  const nextStats = () => {
+    if (statsContainerRef.current) {
+      const containerWidth = statsContainerRef.current.offsetWidth;
+      const scrollPosition = statsContainerRef.current.scrollLeft;
+      const newPosition = scrollPosition + containerWidth * 0.8;
+      
+      statsContainerRef.current.scrollTo({
+        left: newPosition,
+        behavior: 'smooth'
+      });
+      
+      setCurrentStatsIndex(prev => Math.min(prev + 2, 3));
+    }
+  };
+
+  const prevStats = () => {
+    if (statsContainerRef.current) {
+      const containerWidth = statsContainerRef.current.offsetWidth;
+      const scrollPosition = statsContainerRef.current.scrollLeft;
+      const newPosition = scrollPosition - containerWidth * 0.8;
+      
+      statsContainerRef.current.scrollTo({
+        left: newPosition,
+        behavior: 'smooth'
+      });
+      
+      setCurrentStatsIndex(prev => Math.max(prev - 2, 0));
+    }
+  };
+
+  // Calcola gli indicatori di navigazione
+  const statsIndicators = Array.from({ length: 2 }, (_, i) => i);
+  const isFirstStatsPage = currentStatsIndex === 0;
+  const isLastStatsPage = currentStatsIndex >= 2;
+
   if (isLoading) {
     return <DashboardSkeleton />;
   }
@@ -267,45 +325,118 @@ export const Dashboard = () => {
         />
 
         <motion.div
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
+          className="relative"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.1 }}
         >
-          <StatsCard
-            title="Saldo Totale"
-            value={showBalance ? `€${totalBalance.toFixed(2)}` : "€••••••"}
-            change={`${totalAccounts} conti collegati`}
-            changeType="increase"
-            icon={Wallet}
-            color="blue"
-          />
-          <StatsCard
-            title="Spese Mensili"
-            value={showBalance ? `€${monthlyExpenses.toFixed(2)}` : "€••••••"}
-            change={`${expenseTransactions.length} transazioni`}
-            changeType="decrease"
-            icon={TrendingDown}
-            color="red"
-          />
-          <StatsCard
-            title="Entrate Mensili"
-            value={showBalance ? `€${monthlyIncome.toFixed(2)}` : "€••••••"}
-            change={`${incomeTransactions.length} entrate`}
-            changeType="increase"
-            icon={PiggyBank}
-            color="green"
-          />
-          <StatsCard
-            title="Transazioni"
-            value={transactions.length.toString()}
-            change="Totali registrate"
-            changeType="increase"
-            icon={Target}
-            color="yellow"
-          />
+          {/* Navigazione stats card */}
+          {showStatsNavigation && (
+            <>
+              <button
+                onClick={prevStats}
+                disabled={isFirstStatsPage}
+                className={`absolute left-0 top-1/2 -translate-y-1/2 z-10 p-2 bg-white/20 backdrop-blur-sm rounded-full transition-opacity ${
+                  isFirstStatsPage ? 'opacity-30 cursor-not-allowed' : 'opacity-100 hover:bg-white/30'
+                }`}
+                style={{ transform: 'translateY(-50%) translateX(-50%)' }}
+              >
+                <ChevronLeft className="h-5 w-5 text-white" />
+              </button>
+              
+              <button
+                onClick={nextStats}
+                disabled={isLastStatsPage}
+                className={`absolute right-0 top-1/2 -translate-y-1/2 z-10 p-2 bg-white/20 backdrop-blur-sm rounded-full transition-opacity ${
+                  isLastStatsPage ? 'opacity-30 cursor-not-allowed' : 'opacity-100 hover:bg-white/30'
+                }`}
+                style={{ transform: 'translateY(-50%) translateX(50%)' }}
+              >
+                <ChevronRight className="h-5 w-5 text-white" />
+              </button>
+            </>
+          )}
+
+          {/* Container scrollabile per stats card */}
+          <div 
+            ref={statsContainerRef}
+            className="flex overflow-x-auto snap-x snap-mandatory scrollbar-hide space-x-6 pb-4"
+            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+          >
+            <div className="flex-none w-full sm:w-auto snap-center">
+              <StatsCard
+                title="Saldo Totale"
+                value={showBalance ? `€${totalBalance.toFixed(2)}` : "€••••••"}
+                change={`${totalAccounts} conti collegati`}
+                changeType="increase"
+                icon={Wallet}
+                color="blue"
+                className="min-w-[280px]"
+              />
+            </div>
+            <div className="flex-none w-full sm:w-auto snap-center">
+              <StatsCard
+                title="Spese Mensili"
+                value={showBalance ? `€${monthlyExpenses.toFixed(2)}` : "€••••••"}
+                change={`${expenseTransactions.length} transazioni`}
+                changeType="decrease"
+                icon={TrendingDown}
+                color="red"
+                className="min-w-[280px]"
+              />
+            </div>
+            <div className="flex-none w-full sm:w-auto snap-center">
+              <StatsCard
+                title="Entrate Mensili"
+                value={showBalance ? `€${monthlyIncome.toFixed(2)}` : "€••••••"}
+                change={`${incomeTransactions.length} entrate`}
+                changeType="increase"
+                icon={PiggyBank}
+                color="green"
+                className="min-w-[280px]"
+              />
+            </div>
+            <div className="flex-none w-full sm:w-auto snap-center">
+              <StatsCard
+                title="Transazioni"
+                value={transactions.length.toString()}
+                change="Totali registrate"
+                changeType="increase"
+                icon={Target}
+                color="yellow"
+                className="min-w-[280px]"
+              />
+            </div>
+          </div>
+
+          {/* Indicatori di navigazione */}
+          {showStatsNavigation && (
+            <div className="flex justify-center space-x-2 mt-4">
+              {statsIndicators.map((index) => (
+                <button
+                  key={index}
+                  className={`h-2 rounded-full transition-all duration-300 ${
+                    index === Math.floor(currentStatsIndex / 2)
+                      ? 'w-6 bg-white'
+                      : 'w-2 bg-white/30'
+                  }`}
+                  onClick={() => {
+                    if (statsContainerRef.current) {
+                      const containerWidth = statsContainerRef.current.offsetWidth;
+                      statsContainerRef.current.scrollTo({
+                        left: index * containerWidth * 1.6,
+                        behavior: 'smooth'
+                      });
+                      setCurrentStatsIndex(index * 2);
+                    }
+                  }}
+                />
+              ))}
+            </div>
+          )}
         </motion.div>
 
+        
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}

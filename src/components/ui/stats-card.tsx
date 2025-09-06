@@ -9,6 +9,7 @@ export interface StatsCardProps {
   changeType: 'increase' | 'decrease' | 'neutral';
   icon: LucideIcon;
   color?: string;
+  className?: string;
 }
 
 export const StatsCard: React.FC<StatsCardProps> = ({
@@ -17,7 +18,8 @@ export const StatsCard: React.FC<StatsCardProps> = ({
   change,
   changeType,
   icon: Icon,
-  color = "blue"
+  color = "blue",
+  className
 }) => {
   const colorClasses = {
     blue: "from-blue-500/10 to-blue-600/10 border-blue-500/20",
@@ -36,8 +38,8 @@ export const StatsCard: React.FC<StatsCardProps> = ({
 
   return (
     <motion.div
-      className={`bg-gradient-to-br ${colorClasses[color as keyof typeof colorClasses]} backdrop-blur-2xl border rounded-2xl p-6`}
-      whileHover={{ scale: 1.02 }}
+      className={`bg-gradient-to-br ${colorClasses[color as keyof typeof colorClasses]} backdrop-blur-2xl border rounded-2xl p-6 ${className ?? ''} ${className ?? ''}`}
+      whileHover={{ scale: 1.00 }}
       transition={{ duration: 0.2 }}
     >
       <div className="flex items-center justify-between mb-4">

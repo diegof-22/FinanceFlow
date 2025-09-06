@@ -79,8 +79,8 @@ const AppRouter = () => {
           <Route element={
             <div className="h-screen bg-gradient-to-br from-blue-950 via-slate-900 to-blue-900 overflow-hidden flex">
               <Sidebar />
-              <div className="flex-1 h-full overflow-hidden">
-                <main className="h-full overflow-y-auto overflow-x-hidden">
+              <div className="flex-1 h-full overflow-hidden z-10 mt-8 sm:mt-0">
+                <main className="h-full overflow-y-auto overflow-x-hidden ">
                   <Outlet />
                 </main>
               </div>
