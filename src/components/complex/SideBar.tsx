@@ -6,7 +6,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   LayoutDashboard, 
   PiggyBank, 
-  Target, 
   TrendingUp,
   BarChart3,
   User, 

@@ -3,15 +3,19 @@ import { Modal } from '../ui/modal';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
-import { 
-  ShoppingCart, 
-  Car, 
-  Home, 
-  Coffee, 
+import {
+  ShoppingCart,
+  Car,
+  Home,
+  Coffee,
   Gamepad2,
   Heart,
   Target,
-  DollarSign
+  DollarSign,
+  Trash2,
+  Eraser,
+  X,
+  Save,
 } from 'lucide-react';
 import { motion } from "framer-motion";
 
@@ -86,14 +90,12 @@ export const SetBudgetModal: React.FC<SetBudgetModalProps> = ({
     setBudgets(newBudgets);
   };
 
-  const totalBudget = Object.values(budgets).length > 0 
-    ? Object.values(budgets).reduce((sum, budget) => sum + budget, 0)
-    : 0;
+
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Imposta Budget" size="lg">
       <form onSubmit={handleSubmit} className="space-y-6">
-        
+
         <div className="flex flex-col md:flex-row items-center gap-3 mb-2">
           <Input
             type="number"
@@ -112,7 +114,7 @@ export const SetBudgetModal: React.FC<SetBudgetModalProps> = ({
             Imposta per Tutti
           </Button>
         </div>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {categories.map((category, index) => {
             const Icon = category.icon;
@@ -127,7 +129,7 @@ export const SetBudgetModal: React.FC<SetBudgetModalProps> = ({
                 whileHover={{ scale: 1.02, y: -2 }}
               >
                 <div className="flex items-center space-x-3 mb-3">
-                  <div className={`p-2 rounded-lg ${isActive ? 'bg-blue-400/20' : 'bg-white/10'}`}> 
+                  <div className={`p-2 rounded-lg ${isActive ? 'bg-blue-400/20' : 'bg-white/10'}`}>
                     <Icon className={`h-5 w-5 ${category.color}`} />
                   </div>
                   <div>
@@ -162,43 +164,103 @@ export const SetBudgetModal: React.FC<SetBudgetModalProps> = ({
             );
           })}
         </div>
-        
-        <div className="flex flex-col md:flex-row gap-2 mt-2">
-          <Button
-            type="button"
-            onClick={handleClearAll}
-            className="flex-1 bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-400 border border-yellow-400/20"
-          >
-             Pulisci Tutti
-          </Button>
-          {onRemoveAll && Object.keys(currentBudgets).length > 0 && (
-            <Button
-              type="button"
-              onClick={() => setShowRemoveConfirm(true)}
-              className="flex-1 bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-400/20"
-            >
-               Rimuovi Tutti
-            </Button>
-          )}
-        </div>
-        
-        <div className="flex flex-col md:flex-row gap-3 pt-4">
-          <Button
-            type="button"
-            onClick={onClose}
-            className="flex-1 bg-white/10 hover:bg-white/20 text-white border border-white/20"
-          >
-            Annulla
-          </Button>
-          <Button
-            type="submit"
-            className="flex-1 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white"
-          >
-            Salva Budget
-          </Button>
-        </div>
 
         
+        {(() => {
+          const secondaryActions: {
+            label: string;
+            icon: React.ElementType;
+            onClick: () => void;
+            variant: 'ghost' | 'outline' | 'danger';
+            className: string;
+            hidden?: boolean;
+          }[] = [
+              {
+                label: 'Pulisci Tutti',
+                icon: Eraser,
+                onClick: handleClearAll,
+                variant: 'ghost',
+                className: 'flex-1 text-yellow-400 hover:text-yellow-300 hover:bg-yellow-500/10 border border-yellow-400/20 hover:border-yellow-400/40',
+              },
+              {
+                label: 'Rimuovi Tutti',
+                icon: Trash2,
+                onClick: () => setShowRemoveConfirm(true),
+                variant: 'ghost',
+                className: 'flex-1 text-red-400 hover:text-red-300 hover:bg-red-500/10 border border-red-400/20 hover:border-red-400/40',
+                hidden: !(onRemoveAll && Object.keys(currentBudgets).length > 0),
+              },
+            ];
+
+          return (
+            <div className="flex flex-col md:flex-row gap-2 mt-2">
+              {secondaryActions
+                .filter((a) => !a.hidden)
+                .map(({ label, icon: Icon, onClick, variant, className }) => (
+                  <Button
+                    key={label}
+                    type="button"
+                    variant={variant}
+                    onClick={onClick}
+                    className={className}
+                  >
+                    <Icon className="mr-2 h-4 w-4" />
+                    {label}
+                  </Button>
+                ))}
+            </div>
+          );
+        })()}
+
+        
+       
+        
+        {(() => {
+          const primaryActions: {
+            label: string;
+            icon: React.ElementType;
+            type: 'button' | 'submit';
+            onClick?: () => void;
+            variant: 'outline' | 'primary';
+            className: string;
+          }[] = [
+              {
+                label: 'Annulla',
+                icon: X,
+                type: 'button' as const,
+                onClick: onClose,
+                variant: 'outline',
+                className: 'flex-1',
+              },
+              {
+                label: 'Salva Budget',
+                icon: Save,
+                type: 'submit' as const,
+                variant: 'primary',
+                className: 'flex-1 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 border-transparent shadow-lg shadow-blue-500/20',
+              },
+            ];
+
+          return (
+            <div className="flex flex-col md:flex-row gap-3 pt-2">
+              {primaryActions.map(({ label, icon: Icon, type, onClick, variant, className }) => (
+                <Button
+                  key={label}
+                  type={type}
+                  variant={variant}
+                  onClick={onClick}
+                  className={className}
+                  size="lg"
+                >
+                  <Icon className="mr-2 h-4 w-4" />
+                  {label}
+                </Button>
+              ))}
+            </div>
+          );
+        })()}
+
+
         {showRemoveConfirm && (
           <motion.div
             initial={{ opacity: 0 }}
