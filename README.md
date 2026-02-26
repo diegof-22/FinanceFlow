@@ -1,4 +1,4 @@
-FinanceFlow
+# FinanceFlow
 
 FinanceFlow è una web app per la gestione di budget, carte, transazioni, trading, con supporto offline.
 
