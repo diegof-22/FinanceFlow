@@ -71,7 +71,7 @@ export const navigationAnimations = {
     layoutId: "activeTab",
     initial: false,
     transition: transitions.spring,
-    className: "absolute inset-0 bg-blue-600/20 border border-blue-500/30 rounded-xl"
+    className: "absolute inset-0 bg-white border border-[#e5e5e5] shadow-sm rounded-xl"
   },
 
   navItem: (isActive: boolean) => ({
@@ -93,7 +93,8 @@ export const navigationAnimations = {
     animate: { opacity: 0, x: 0 },
     whileHover: { opacity: 1 },
     exit: { opacity: 0, x: -10 },
-    transition: transitions.quick
+    transition: transitions.quick,
+    className: "absolute left-full ml-2 px-2 py-1 bg-[#080808] text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50"
   }
 };
 
@@ -139,7 +140,7 @@ export const userAnimations = {
     initial: { opacity: 0, x: -10 },
     whileHover: { opacity: 1, x: 0 },
     transition: transitions.quick,
-    className: "absolute left-full ml-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50"
+    className: "absolute left-full ml-2 px-2 py-1 bg-[#080808] text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50"
   }
 };
 
@@ -149,21 +150,21 @@ export const logoutAnimations = {
     whileHover: { scale: 1.02 },
     whileTap: { scale: 0.98 },
     transition: transitions.quick,
-    className: "w-full flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 bg-red-500/10 border border-red-500/30 text-red-300 hover:bg-red-500/20 hover:text-red-200"
+    className: "w-full flex items-center px-4 py-3 text-sm font-semibold rounded-xl transition-all duration-200 bg-red-50 border border-red-100 text-red-600 hover:bg-red-100 hover:text-red-700"
   },
 
   logoutCollapsed: {
     whileHover: { scale: 1.1 },
     whileTap: { scale: 0.9 },
     transition: transitions.quick,
-    className: "flex items-center justify-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 group relative bg-red-500/10 border border-red-500/30 text-red-300 hover:bg-red-500/20 hover:text-red-200"
+    className: "flex items-center justify-center px-4 py-3 text-sm font-semibold rounded-xl transition-all duration-200 group relative bg-red-50 border border-red-100 text-red-600 hover:bg-red-100 hover:text-red-700"
   },
 
   logoutTooltip: {
     initial: { opacity: 0, x: -10 },
     whileHover: { opacity: 1, x: 0 },
     transition: transitions.quick,
-    className: "absolute left-full ml-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50"
+    className: "absolute left-full ml-2 px-2 py-1 bg-[#080808] text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50"
   }
 };
 

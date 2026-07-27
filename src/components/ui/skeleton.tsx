@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 
 export const Skeleton: React.FC<{ className?: string }> = ({ className = "" }) => (
   <motion.div
-    className={`bg-white/10 rounded-lg animate-pulse ${className}`}
+    className={`bg-slate-200 rounded-lg animate-pulse ${className}`}
     initial={{ opacity: 0.5 }}
     animate={{ opacity: [0.5, 0.8, 0.5] }}
     transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
@@ -13,7 +13,7 @@ export const Skeleton: React.FC<{ className?: string }> = ({ className = "" }) =
 
 
 export const StatsCardSkeleton: React.FC = () => (
-  <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-6">
+  <div className="bg-white border border-[#f0f0f0] rounded-[24px] p-6">
     <div className="flex items-center justify-between mb-4">
       <Skeleton className="h-6 w-24" />
       <Skeleton className="h-8 w-8 rounded-lg" />
@@ -25,7 +25,7 @@ export const StatsCardSkeleton: React.FC = () => (
 
 
 export const CardItemSkeleton: React.FC = () => (
-  <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-6">
+  <div className="bg-white border border-[#f0f0f0] rounded-[24px] p-6">
     <div className="flex items-center justify-between mb-4">
       <div className="flex items-center space-x-3">
         <Skeleton className="h-10 w-10 rounded-lg" />
@@ -45,7 +45,7 @@ export const CardItemSkeleton: React.FC = () => (
 
 
 export const TransactionItemSkeleton: React.FC = () => (
-  <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-4">
+  <div className="bg-white border border-[#f0f0f0] rounded-[24px] p-4">
     <div className="flex items-center justify-between">
       <div className="flex items-center space-x-3">
         <Skeleton className="h-10 w-10 rounded-lg" />
@@ -64,7 +64,7 @@ export const TransactionItemSkeleton: React.FC = () => (
 
 
 export const BudgetCategoryCardSkeleton: React.FC = () => (
-  <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-6">
+  <div className="bg-white border border-[#f0f0f0] rounded-[24px] p-6">
     <div className="flex items-center justify-between mb-4">
       <div className="flex items-center space-x-3">
         <Skeleton className="h-10 w-10 rounded-lg" />

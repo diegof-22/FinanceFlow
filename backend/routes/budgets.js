@@ -3,6 +3,7 @@ const router = express.Router();
 
 const admin = require('firebase-admin');
 const db = admin.firestore();
+const { getCache, setCache, invalidateCache } = require('../services/cacheService');
 
 
 async function budgetExists(userEmail, category) {
@@ -24,10 +25,18 @@ router.get('/', async (req, res) => {
       return res.status(400).json({ error: 'User email is required' });
     }
 
+    const cacheKey = `cache:budgets:${userEmail}`;
+    const cachedData = await getCache(cacheKey);
+    if (cachedData) {
+      return res.json(cachedData);
+    }
+
     console.log(`GET /api/budgets - Fetching budgets for user: ${userEmail}`);
     const snapshot = await db.collection('users').doc(userEmail).collection('budgets').get();
     const budgets = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     console.log(`Found ${budgets.length} budgets for user ${userEmail}`);
+    
+    await setCache(cacheKey, budgets);
     res.json(budgets);
   } catch (e) {
     console.error('Error in GET /api/budgets:', e);
@@ -65,6 +74,8 @@ router.post('/', async (req, res) => {
     
     const docRef = await db.collection('users').doc(userEmail).collection('budgets').add(budgetData);
     const doc = await docRef.get();
+    
+    await invalidateCache(`cache:budgets:${userEmail}`);
     
     console.log('Budget created successfully:', doc.id);
     res.status(201).json({ id: doc.id, ...doc.data() });
@@ -106,6 +117,8 @@ router.patch('/:id', async (req, res) => {
     await docRef.update(updateData);
     const updatedDoc = await docRef.get();
     
+    await invalidateCache(`cache:budgets:${userEmail}`);
+    
     console.log('Budget updated successfully:', req.params.id);
     res.json({ id: updatedDoc.id, ...updatedDoc.data() });
   } catch (e) {
@@ -134,6 +147,9 @@ router.delete('/:id', async (req, res) => {
     }
     
     await docRef.delete();
+    
+    await invalidateCache(`cache:budgets:${userEmail}`);
+    
     console.log('Budget deleted successfully:', req.params.id);
     res.status(204).end();
   } catch (e) {

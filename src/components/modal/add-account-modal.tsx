@@ -8,7 +8,6 @@ import { motion } from 'framer-motion';
 import { NumberInput } from '../ui/number-input';
 import { Account } from '@/types/finance';
 
-
 export interface AddAccountModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -73,70 +72,66 @@ export const AddAccountModal: React.FC<AddAccountModalProps> = ({
     }
   };
 
-
-
- const colorOptions = [
-    { value: 'blue', label: 'Blu', class: 'bg-blue-500', gradient: 'from-blue-600/20 to-blue-800/20', text: 'text-blue-300' },
-    { value: 'green', label: 'Verde', class: 'bg-green-500', gradient: 'from-green-600/20 to-green-800/20', text: 'text-green-300' },
-    { value: 'purple', label: 'Viola', class: 'bg-purple-500', gradient: 'from-purple-600/20 to-purple-800/20', text: 'text-purple-300' },
-    { value: 'red', label: 'Rosso', class: 'bg-red-500', gradient: 'from-red-600/20 to-red-800/20', text: 'text-red-300' },
-    { value: 'orange', label: 'Arancione', class: 'bg-orange-500', gradient: 'from-orange-600/20 to-orange-800/20', text: 'text-orange-300' },
-    { value: 'pink', label: 'Rosa', class: 'bg-pink-500', gradient: 'from-pink-600/20 to-pink-800/20', text: 'text-pink-300' }
+  const colorOptions = [
+    { value: 'blue', label: 'Blu', class: 'bg-blue-500', gradient: 'from-blue-500 to-blue-600', text: 'text-white' },
+    { value: 'green', label: 'Verde', class: 'bg-emerald-500', gradient: 'from-emerald-500 to-emerald-600', text: 'text-white' },
+    { value: 'purple', label: 'Viola', class: 'bg-purple-500', gradient: 'from-purple-500 to-purple-600', text: 'text-white' },
+    { value: 'red', label: 'Rosso', class: 'bg-rose-500', gradient: 'from-rose-500 to-rose-600', text: 'text-white' },
+    { value: 'orange', label: 'Arancione', class: 'bg-orange-500', gradient: 'from-orange-500 to-orange-600', text: 'text-white' },
+    { value: 'zinc', label: 'Grigio', class: 'bg-zinc-800', gradient: 'from-zinc-800 to-zinc-900', text: 'text-white' }
   ];
 
-const selectedColor = colorOptions.find(color => color.value === formData.color) || colorOptions[0];
+  const selectedColor = colorOptions.find(color => color.value === formData.color) || colorOptions[0];
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Collega Conto" size="sm">
-      <form onSubmit={handleSubmit} className="space-y-3">
+    <Modal isOpen={isOpen} onClose={onClose} title={initialData ? "Modifica Conto" : "Collega Conto"} size="sm">
+      <form onSubmit={handleSubmit} className="space-y-4">
         
-        <div className={`bg-gradient-to-br ${selectedColor.gradient} rounded-lg p-3 border border-white/20 backdrop-blur-sm`}>
-          <div className="flex items-center justify-between mb-2">
-            <Building className={`h-5 w-5 ${selectedColor.text}`}/>
-            <span className={`text-xs font-bold tracking-wider ${selectedColor.text}`}>
+        <div className={`bg-gradient-to-br ${selectedColor.gradient} rounded-[24px] p-5 shadow-sm transition-all duration-300`}>
+          <div className="flex items-center justify-between mb-4">
+            <Building className={`h-6 w-6 ${selectedColor.text}`}/>
+            <span className={`text-xs font-bold tracking-wider px-3 py-1 rounded-full bg-white/20 ${selectedColor.text}`}>
               CONTO CORRENTE
             </span>
           </div>
           <div className="space-y-1">
-            <p className="text-white/70 text-xs">
+            <p className={`${selectedColor.text} opacity-80 text-sm font-medium`}>
               {formData.bankName || "Nome Banca"}
             </p>
-            <p className="text-white font-semibold text-sm">
+            <p className={`${selectedColor.text} font-bold text-lg`}>
               {formData.accountName || "Nome Conto"}
             </p>
-            <p className="text-lg font-bold text-white">
+            <p className={`text-3xl font-bold tracking-tight ${selectedColor.text} mt-2`}>
               €{formData.balance || "0.00"}
             </p>
           </div>
         </div>
-
         
-        <div className="space-y-3">
-          
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <Label
                 htmlFor="bankName"
-                className="text-white/90 mb-1 block text-sm font-medium"
+                className="text-[#080808] mb-1.5 block text-xs font-bold"
               >
                 Banca
               </Label>
               <Input
                 id="bankName"
                 type="text"
-                placeholder="Intesa"
+                placeholder="Intesa, Sella, ecc."
                 value={formData.bankName}
                 onChange={(e) =>
                   setFormData({ ...formData, bankName: e.target.value })
                 }
-                className="bg-white/10 border-white/20 text-white placeholder:text-white/40 rounded-lg h-9 text-sm"
+                className="bg-[#f9f9f9] border border-[#e5e5e5] text-[#080808] placeholder:text-[#080808]/40 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#080808]/20 focus:ring-2 focus:ring-[#080808]/5 shadow-sm"
                 required
               />
             </div>
             <div>
               <Label
                 htmlFor="accountName"
-                className="text-white/90 mb-1 block text-sm font-medium"
+                className="text-[#080808] mb-1.5 block text-xs font-bold"
               >
                 Nome Conto
               </Label>
@@ -148,17 +143,16 @@ const selectedColor = colorOptions.find(color => color.value === formData.color)
                 onChange={(e) =>
                   setFormData({ ...formData, accountName: e.target.value })
                 }
-                className="bg-white/10 border-white/20 text-white placeholder:text-white/40 rounded-lg h-9 text-sm"
+                className="bg-[#f9f9f9] border border-[#e5e5e5] text-[#080808] placeholder:text-[#080808]/40 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#080808]/20 focus:ring-2 focus:ring-[#080808]/5 shadow-sm"
                 required
               />
             </div>
           </div>
-
           
           <div>
             <Label
               htmlFor="balance"
-              className="text-white/90 mb-1 block text-sm font-medium"
+              className="text-[#080808] mb-1.5 block text-xs font-bold"
             >
               Saldo Attuale
             </Label>
@@ -169,18 +163,15 @@ const selectedColor = colorOptions.find(color => color.value === formData.color)
               prefix="€"
               increment={100}
               min={0}
-              className="h-3"
+              className="shadow-sm"
             />
           </div>
-
-
-
           
           <div>
-            <Label className="text-white/90 mb-1.5 block text-sm font-medium">
-              Colore
+            <Label className="text-[#080808] mb-2 block text-xs font-bold">
+              Colore Tema
             </Label>
-            <div className="flex justify-center space-x-2">
+            <div className="flex flex-wrap gap-3">
               {colorOptions.map((color) => (
                 <motion.button
                   key={color.value}
@@ -188,13 +179,13 @@ const selectedColor = colorOptions.find(color => color.value === formData.color)
                   onClick={() =>
                     setFormData({ ...formData, color: color.value })
                   }
-                  className={`w-7 h-7 rounded-full ${color.class} border-2 ${
+                  className={`w-10 h-10 rounded-full ${color.class} ${
                     formData.color === color.value
-                      ? "border-white scale-110"
-                      : "border-transparent"
+                      ? "ring-2 ring-offset-2 ring-[#080808] scale-110 shadow-md"
+                      : "border border-black/5 opacity-80 hover:opacity-100"
                   } transition-all`}
-                  whileHover={{ scale: 1.15 }}
-                  whileTap={{ scale: 0.9 }}
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.95 }}
                   title={color.label}
                 />
               ))}
@@ -202,24 +193,20 @@ const selectedColor = colorOptions.find(color => color.value === formData.color)
           </div>
         </div>
 
-        
-        <div className="flex space-x-3 pt-1">
+        <div className="flex space-x-3 pt-4">
           <Button
             type="button"
             onClick={onClose}
-            variant="secondary"
-            size="md"
-            className="flex-1 h-9"
+            variant="ghost"
+            className="flex-1 h-11 rounded-full text-[#080808] border border-[#e5e5e5] hover:bg-[#f5f5f5]"
           >
             Annulla
           </Button>
           <Button
             type="submit"
-            variant="success"
-            size="md"
-            className="flex-1 h-9"
+            className="flex-1 h-11 rounded-full bg-[#080808] text-white font-bold hover:bg-[#080808]/80 hover:scale-[1.02] active:scale-95 transition-all"
           >
-            Collega
+            {initialData ? "Salva Modifiche" : "Collega Conto"}
           </Button>
         </div>
       </form>

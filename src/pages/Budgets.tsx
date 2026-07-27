@@ -5,7 +5,7 @@ import { BudgetCategoryCard } from "@/components/ui/budget-category-card";
 import { AddBudgetCard } from "@/components/ui/add-budget-card";
 import { ConfirmBudgetRemovalModal } from "@/components/modal/confirm-budget-removal-modal";
 import { SetBudgetModal } from "@/components/modal/set-budget-modal";
-import { LoadingScreen } from '../components/ui/loadingscreen';
+
 import { Button } from "@/components/ui/button";
 
 import {
@@ -18,14 +18,13 @@ import {
   Target,
   CheckCircle,
   Settings,
+  Plus,
 } from "lucide-react";
 import { BudgetTips } from "@/components/ui/budget-tips";
 import { BudgetsSkeleton } from '@/components/ui/skeleton';
 
 export default function Budgets() {
   const {
-    isOffline,
-    reloadOfflineData,
     isLoading,
     transactions,
     budgets: budgetArray,
@@ -35,7 +34,6 @@ export default function Budgets() {
     getMonthlyExpenses,
   } = useFinanceDataContext();
 
-  // La gestione offline è già centralizzata in FinanceDataContext
 
   const budgets = Array.isArray(budgetArray) && budgetArray.length > 0 
     ? budgetArray.reduce((acc, budget) => {
@@ -158,8 +156,8 @@ export default function Budgets() {
   }
 
   return (
-    <div className="p-6 lg:p-8">
-      <div className="max-w-7xl mx-auto space-y-8">
+    <div className="p-4 sm:p-6 lg:p-8 pb-20 md:pb-8 min-h-screen">
+      <div className="max-w-7xl mx-auto space-y-6 sm:space-y-8">
         
         <motion.div
           className="mb-8"
@@ -169,24 +167,24 @@ export default function Budgets() {
         >
           <div className="flex items-center justify-between">
             <div className="text-left">
-              <h1 className="text-3xl lg:text-4xl font-bold text-white mb-2">
+              <h1 className="text-2xl sm:text-3xl font-semibold text-[#080808] mb-1">
                 Gestione Budget
               </h1>
-              <p className="text-white/70 text-lg">
-                Imposta e monitora i tuoi budget mensili per ogni categoria
+              <p className="text-[#080808]/70 text-sm sm:text-base">
+                Imposta e monitora i tuoi budget 
               </p>
             </div>
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.3, delay: 0.2 }}
+              className="flex items-center gap-2 sm:gap-3"
             >
               <Button
                 onClick={() => setIsSetBudgetModalOpen(true)}
-                className="bg-white/10 border border-blue-400 text-blue-400 px-3 py-2 sm:px-6 sm:py-3 rounded-lg font-medium flex items-center space-x-2 shadow-sm hover:bg-white/20 hover:border-blue-500 w-full sm:w-auto text-sm sm:text-base hidden sm:flex"
+                className="bg-[#080808] text-white px-4 py-2 sm:px-5 sm:py-2.5 rounded-full font-medium flex items-center space-x-2 shadow-sm hover:bg-[#080808]/80 text-sm transition-all hover:scale-105 active:scale-95"
               >
-                <Settings className="h-4 w-4 sm:h-5 sm:w-5" />
-                <span>Gestisci Tutti i Budget</span>
+                <Plus className="h-4 w-4" />
               </Button>
             </motion.div>
           </div>
@@ -197,7 +195,7 @@ export default function Budgets() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.3 }}
         >
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="flex flex-col space-y-4 md:grid md:grid-cols-2 lg:grid-cols-3 md:space-y-0 md:gap-6">
             
             {categories
               .filter(category => {
@@ -211,6 +209,7 @@ export default function Budgets() {
                 return (
                   <motion.div
                     key={category.value}
+                    className="w-full"
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.3, delay: index * 0.1 }}
@@ -229,22 +228,6 @@ export default function Budgets() {
                 );
               })}
 
-            {categories.filter(cat => !budgets[cat.value]).length > 0 && (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3, delay: 0.2 }}
-              >
-                <AddBudgetCard
-                  categories={categories.filter(cat => !budgets[cat.value])}
-                  onSetBudget={handleSetBudget}
-                  existingBudgets={budgets}
-                  expensesByCategory={expensesByCategory}
-                  showManageAllBudgetButtonMobile={true}
-                  onManageAllBudgetsMobile={() => setIsSetBudgetModalOpen(true)}
-                />
-              </motion.div>
-            )}
           </div>
         </motion.div>
 
@@ -253,7 +236,6 @@ export default function Budgets() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.4 }}
         >
-          <BudgetTips />
         </motion.div>
       </div>
 

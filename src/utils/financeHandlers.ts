@@ -1,4 +1,4 @@
-import { Transaction, TransactionInput, CardInput, AccountInput, OfflineCard, OfflineAccount, OfflineTransaction } from "@/types/finance";
+import { Transaction, TransactionInput, CardInput, AccountInput } from "@/types/finance";
 
 
 export interface ConfirmModalState {
@@ -11,7 +11,7 @@ export interface ConfirmModalState {
 
 
 
-export const sortTransactionsByDate = (transactions: (Transaction | OfflineTransaction)[]): (Transaction | OfflineTransaction)[] => {
+export const sortTransactionsByDate = (transactions: Transaction[]): Transaction[] => {
   if (!Array.isArray(transactions) || transactions.length === 0) return [];
   return [...transactions].sort((a, b) => {
     const dateA = new Date(a.date).getTime();

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Wallet, Building, DollarSign, Calendar, Trash2, MoreVertical, Edit3 } from 'lucide-react';
+import { Wallet, Building, DollarSign, Trash2, MoreVertical, Edit3 } from 'lucide-react';
 import { Account } from '../../types/finance';
 import { formatBalance, formatTimestamp } from '../../utils/financeHandlers';
 
@@ -14,12 +14,13 @@ export const AccountItem: React.FC<AccountItemProps> = ({ account, onDelete, onE
   const [showMenu, setShowMenu] = useState(false);
 
   const colorClasses = {
-    blue: "from-blue-500/20 to-blue-600/30 border-blue-500/30",
-    green: "from-green-500/20 to-green-600/30 border-green-500/30",
-    purple: "from-purple-500/20 to-purple-600/30 border-purple-500/30",
-    red: "from-red-500/20 to-red-600/30 border-red-500/30",
-    orange: "from-orange-500/20 to-orange-600/30 border-orange-500/30",
-    pink: "from-pink-500/20 to-pink-600/30 border-pink-500/30"
+    blue: "bg-gradient-to-br from-blue-500 to-blue-600 text-white",
+    green: "bg-gradient-to-br from-emerald-500 to-emerald-600 text-white",
+    purple: "bg-gradient-to-br from-purple-500 to-purple-600 text-white",
+    red: "bg-gradient-to-br from-rose-500 to-rose-600 text-white",
+    orange: "bg-gradient-to-br from-orange-500 to-orange-600 text-white",
+    zinc: "bg-gradient-to-br from-zinc-800 to-zinc-900 text-white",
+    pink: "bg-gradient-to-br from-pink-500 to-pink-600 text-white",
   };
 
   const getAccountTypeIcon = (type: string) => {
@@ -48,30 +49,30 @@ export const AccountItem: React.FC<AccountItemProps> = ({ account, onDelete, onE
 
   return (
     <motion.div
-      className={`p-4 bg-gradient-to-br ${colorClasses[account.color as keyof typeof colorClasses]} border rounded-xl`}
+      className={`p-5 ${colorClasses[account.color as keyof typeof colorClasses] || colorClasses.blue} rounded-[24px] shadow-sm hover:shadow-md transition-shadow`}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
     >
-      <div className="flex items-start justify-between mb-3">
-        <IconComponent className="h-6 w-6 text-white/70" />
+      <div className="flex items-start justify-between mb-4">
+        <IconComponent className="h-6 w-6 text-white" />
         <div className="flex items-center space-x-2">
-          <span className="text-white/60 text-xs font-medium">
+          <span className="text-xs font-bold tracking-wider px-3 py-1 rounded-full bg-white/20 text-white">
             {getAccountTypeLabel(account.accountType)}
           </span>
           {(onDelete || onEdit) && (
             <div className="relative">
               <button
                 onClick={() => setShowMenu(!showMenu)}
-                className="p-1 hover:bg-white/10 rounded-full transition-colors"
+                className="p-1 hover:bg-white/20 rounded-full transition-colors"
               >
-                <MoreVertical className="h-4 w-4 text-white/60" />
+                <MoreVertical className="h-4 w-4 text-white" />
               </button>
               {showMenu && (
                 <motion.div
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
-                  className="absolute right-0 top-8 bg-gray-800 border border-white/20 rounded-lg shadow-lg z-10"
+                  className="absolute right-0 top-8 bg-white border border-[#f0f0f0] rounded-lg shadow-lg z-10"
                 >
                   {onEdit && (
                     <button
@@ -79,7 +80,7 @@ export const AccountItem: React.FC<AccountItemProps> = ({ account, onDelete, onE
                         onEdit(account);
                         setShowMenu(false);
                       }}
-                      className="flex items-center space-x-2 px-3 py-2 text-blue-400 hover:bg-blue-400/10 rounded-lg transition-colors w-full text-left"
+                      className="flex items-center space-x-2 px-3 py-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors w-full text-left"
                     >
                       <Edit3 className="h-4 w-4" />
                       <span className="text-sm">Modifica</span>
@@ -91,7 +92,7 @@ export const AccountItem: React.FC<AccountItemProps> = ({ account, onDelete, onE
                         onDelete(account.id);
                         setShowMenu(false);
                       }}
-                      className="flex items-center space-x-2 px-3 py-2 text-red-400 hover:bg-red-400/10 rounded-lg transition-colors w-full text-left"
+                      className="flex items-center space-x-2 px-3 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors w-full text-left"
                     >
                       <Trash2 className="h-4 w-4" />
                       <span className="text-sm">Elimina</span>
@@ -103,16 +104,10 @@ export const AccountItem: React.FC<AccountItemProps> = ({ account, onDelete, onE
           )}
         </div>
       </div>
-      <div className="space-y-2">
-        <div>
-          <p className="text-white/70 text-sm">{account.bankName}</p>
-          <h3 className="text-white font-semibold">{account.accountName}</h3>
-        </div>
-        <p className="text-2xl font-bold text-white">€{formatBalance(account.balance)}</p>
-        <div className="flex items-center space-x-1 text-white/50 text-xs">
-          <Calendar className="h-3 w-3" />
-          <span>{formatTimestamp(account.createdAt) === 'Data non disponibile' ? '—' : formatTimestamp(account.createdAt)}</span>
-        </div>
+      <div className="space-y-1 mt-4">
+        <p className="text-white/80 text-sm font-medium">{account.bankName}</p>
+        <h3 className="text-white font-bold text-lg">{account.accountName}</h3>
+        <p className="text-3xl font-bold tracking-tight text-white mt-2">€{formatBalance(account.balance)}</p>
       </div>
     </motion.div>
   );

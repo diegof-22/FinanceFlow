@@ -1,0 +1,26 @@
+t=2026-07-10T07:30:41+0200 lvl=info msg="no configuration paths supplied"
+t=2026-07-10T07:30:41+0200 lvl=info msg="using configuration at default config path" path="/Users/diegofanciulli/Library/Application Support/ngrok/ngrok.yml"
+t=2026-07-10T07:30:41+0200 lvl=info msg="open config file" path="/Users/diegofanciulli/Library/Application Support/ngrok/ngrok.yml" err=nil
+t=2026-07-10T07:30:41+0200 lvl=info msg="FIPS 140 mode" enabled=false
+t=2026-07-10T07:30:41+0200 lvl=info msg="starting web service" obj=web addr=127.0.0.1:4040 allow_hosts=[]
+t=2026-07-10T07:30:41+0200 lvl=info msg="client session established" obj=tunnels.session
+t=2026-07-10T07:30:41+0200 lvl=info msg="tunnel session started" obj=tunnels.session
+t=2026-07-10T07:30:42+0200 lvl=info msg="update available" obj=updater
+t=2026-07-10T07:30:42+0200 lvl=info msg="started tunnel" obj=tunnels name=command_line addr=http://localhost:3000 url=https://flagman-mug-spinning.ngrok-free.dev
+t=2026-07-10T07:31:19+0200 lvl=info msg=start pg=/api/tunnels id=de1b60e8cefa734e
+t=2026-07-10T07:31:19+0200 lvl=info msg=end pg=/api/tunnels id=de1b60e8cefa734e status=200 dur=285.583µs
+t=2026-07-10T07:33:17+0200 lvl=info msg="join connections" obj=join id=eacc9f809d10 l=127.0.0.1:3000 r=92.223.159.126:62374
+t=2026-07-10T07:33:17+0200 lvl=info msg="join connections" obj=join id=c0035b440e7e l=127.0.0.1:3000 r=92.223.159.126:62374
+t=2026-07-10T07:33:28+0200 lvl=info msg="join connections" obj=join id=82708bf4b410 l=127.0.0.1:3000 r=92.223.159.126:62374
+t=2026-07-10T07:33:28+0200 lvl=info msg="join connections" obj=join id=f9abe99ae3b3 l=127.0.0.1:3000 r=92.223.159.126:62374
+t=2026-07-10T07:33:29+0200 lvl=info msg="join connections" obj=join id=ea288a74bc01 l=127.0.0.1:3000 r=92.223.159.126:62374
+t=2026-07-10T07:33:29+0200 lvl=info msg="join connections" obj=join id=90aeffbe7347 l=127.0.0.1:3000 r=92.223.159.126:62374
+t=2026-07-10T07:35:26+0200 lvl=info msg="join connections" obj=join id=330c23fb57dd l=127.0.0.1:3000 r=92.223.159.126:62374
+t=2026-07-10T07:35:26+0200 lvl=info msg="join connections" obj=join id=8376c214ccc4 l=127.0.0.1:3000 r=92.223.159.126:62374
+t=2026-07-10T07:37:38+0200 lvl=info msg="join connections" obj=join id=5bc7fcb218c1 l=127.0.0.1:3000 r=92.223.159.126:62374
+t=2026-07-10T07:38:47+0200 lvl=info msg="join connections" obj=join id=cc1e17b48140 l=127.0.0.1:3000 r=92.223.159.126:62374
+t=2026-07-10T07:41:51+0200 lvl=info msg="join connections" obj=join id=88d0b77accaa l=127.0.0.1:3000 r=92.223.159.126:62374
+t=2026-07-10T07:45:50+0200 lvl=info msg="join connections" obj=join id=5edd08f5a770 l=127.0.0.1:3000 r=92.223.159.126:62374
+t=2026-07-10T07:48:18+0200 lvl=info msg="join connections" obj=join id=0f4a0df29ac0 l=127.0.0.1:3000 r=92.223.159.126:62374
+t=2026-07-10T07:50:55+0200 lvl=info msg="received stop request" obj=app stopReq="{err:<nil> restart:false}"
+t=2026-07-10T07:50:55+0200 lvl=info msg="session closing" obj=tunnels.session err=nil

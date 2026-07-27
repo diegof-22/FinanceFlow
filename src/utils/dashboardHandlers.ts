@@ -1,5 +1,4 @@
-import { CardData, AccountData, TransactionData } from "@/types/finance";
-import { convertAccountData, convertCardData } from "@/types/finance";
+import { Card, Account, Transaction, Budget, CardInput, AccountInput, TransactionInput, CardData, AccountData, TransactionData, convertTransactionData } from "@/types/finance";
 import { BUDGET_CATEGORIES, type ConfirmRemovalModalState } from "./dashboardUtils";
 
 export interface DashboardHandlers {
@@ -26,50 +25,77 @@ export interface ConfirmModalState {
   onConfirm: () => void;
 }
 
-export const createDashboardHandlers = (
-  setIsAddAccountModalOpen: (open: boolean) => void,
-  setIsAddCardModalOpen: (open: boolean) => void,
-  setIsAddTransactionModalOpen: (open: boolean) => void,
-  setConfirmRemovalModal: (state: ConfirmRemovalModalState) => void,
-  setConfirmModal: (state: ConfirmModalState) => void,
+export interface CreateDashboardHandlersOptions {
+  setIsAddAccountModalOpen?: (open: boolean) => void;
+  setIsAddCardModalOpen?: (open: boolean) => void;
+  setIsAddTransactionModalOpen?: (open: boolean) => void;
+  setConfirmRemovalModal?: (state: ConfirmRemovalModalState) => void;
+  setConfirmModal?: (state: ConfirmModalState) => void;
   
-  selectedCard: any,
-  selectedAccount: any,
-  setSelectedCard: (card: any) => void,
-  setSelectedAccount: (account: any) => void,
+  selectedCard?: Card | null;
+  selectedAccount?: Account | null;
+  setSelectedCard?: (card: Card | null) => void;
+  setSelectedAccount?: (account: Account | null) => void;
   
-  addCard: (card: any) => Promise<boolean>,
-  addAccount: (account: any) => Promise<boolean>,
-  addTransaction: (transaction: any) => Promise<boolean>,
-  updateCard: (id: string, updates: any) => Promise<boolean>,
-  updateAccount: (id: string, updates: any) => Promise<boolean>,
-  deleteCard: (id: string) => Promise<boolean>,
-  deleteAccount: (id: string) => Promise<boolean>,
-  deleteTransaction: (id: string) => Promise<boolean>,
-  setBudgetForCategory: (category: string, amount: number) => Promise<boolean>,
-  removeBudget: (category: string) => Promise<boolean>,
+  addCard?: (card: CardInput) => Promise<boolean>;
+  addAccount?: (account: AccountInput) => Promise<boolean>;
+  addTransaction?: (transaction: TransactionInput) => Promise<boolean>;
+  updateCard?: (id: string, updates: Partial<CardInput>) => Promise<boolean>;
+  updateAccount?: (id: string, updates: Partial<AccountInput>) => Promise<boolean>;
+  deleteCard?: (id: string) => Promise<boolean>;
+  deleteAccount?: (id: string) => Promise<boolean>;
+  deleteTransaction?: (id: string) => Promise<boolean>;
+  setBudgetForCategory?: (category: string, amount: number) => Promise<boolean>;
+  removeBudget?: (category: string) => Promise<boolean>;
   
-  cards: any[],
-  accounts: any[],
-  transactions: any[],
-  budgets: any[],
-  confirmRemovalModal: ConfirmRemovalModalState
-): DashboardHandlers => {
+  cards?: Card[];
+  accounts?: Account[];
+  transactions?: Transaction[];
+  budgets?: Budget[];
+  confirmRemovalModal?: ConfirmRemovalModalState;
+}
 
-  const handleAddAccount = () => setIsAddAccountModalOpen(true);
-  const handleAddCard = () => setIsAddCardModalOpen(true);
-  const handleAddTransaction = () => setIsAddTransactionModalOpen(true);
+export const createDashboardHandlers = (options: CreateDashboardHandlersOptions): DashboardHandlers => {
+  const {
+    setIsAddAccountModalOpen,
+    setIsAddCardModalOpen,
+    setIsAddTransactionModalOpen,
+    setConfirmRemovalModal,
+    setConfirmModal,
+    selectedCard,
+    selectedAccount,
+    setSelectedCard,
+    setSelectedAccount,
+    addCard,
+    addAccount,
+    addTransaction,
+    updateCard,
+    updateAccount,
+    deleteCard,
+    deleteAccount,
+    deleteTransaction,
+    removeBudget,
+    cards = [],
+    accounts = [],
+    transactions = [],
+    budgets = [],
+    confirmRemovalModal
+  } = options;
+
+  const handleAddAccount = () => setIsAddAccountModalOpen?.(true);
+  const handleAddCard = () => setIsAddCardModalOpen?.(true);
+  const handleAddTransaction = () => setIsAddTransactionModalOpen?.(true);
 
   const handleCardSubmit = async (data: CardData) => {
     try {
       let success = false;
       
-      if (selectedCard) {
+      if (selectedCard && updateCard) {
         success = await updateCard(selectedCard.id, {
           ...data,
           balance: parseFloat(data.balance)
         });
-      } else {
+      } else if (addCard) {
         success = await addCard({
           ...data,
           balance: parseFloat(data.balance)
@@ -77,8 +103,8 @@ export const createDashboardHandlers = (
       }
       
       if (success) {
-        setIsAddCardModalOpen(false);
-        setSelectedCard(null);
+        setIsAddCardModalOpen?.(false);
+        setSelectedCard?.(null);
       }
     } catch (error) {
       console.error('Error in handleCardSubmit:', error);
@@ -89,13 +115,12 @@ export const createDashboardHandlers = (
     try {
       let success = false;
       
-      if (selectedAccount) {
-        
+      if (selectedAccount && updateAccount) {
         success = await updateAccount(selectedAccount.id, {
           ...data,
           balance: parseFloat(data.balance)
         });
-      } else {
+      } else if (addAccount) {
         success = await addAccount({
           ...data,
           balance: parseFloat(data.balance)
@@ -103,8 +128,8 @@ export const createDashboardHandlers = (
       }
       
       if (success) {
-        setIsAddAccountModalOpen(false);
-        setSelectedAccount(null);
+        setIsAddAccountModalOpen?.(false);
+        setSelectedAccount?.(null);
       }
     } catch (error) {
       console.error('Error in handleAccountSubmit:', error);
@@ -113,9 +138,10 @@ export const createDashboardHandlers = (
 
   const handleTransactionSubmit = async (data: TransactionData): Promise<boolean> => {
     try {
-      const success = await addTransaction(data);
+      if (!addTransaction) return false;
+      const success = await addTransaction(convertTransactionData(data));
       if (success) {
-        setIsAddTransactionModalOpen(false);
+        setIsAddTransactionModalOpen?.(false);
       }
       return success;
     } catch (error) {
@@ -129,7 +155,7 @@ export const createDashboardHandlers = (
     const budget = budgets.find(b => b.category === category);
     const budgetAmount = budget?.limit || 0;
     
-    setConfirmRemovalModal({
+    setConfirmRemovalModal?.({
       isOpen: true,
       category,
       categoryName: categoryData?.label || category,
@@ -138,10 +164,11 @@ export const createDashboardHandlers = (
   };
 
   const confirmRemoveBudget = async () => {
+    if (!removeBudget || !confirmRemovalModal) return;
     try {
       const success = await removeBudget(confirmRemovalModal.category);
       if (success) {
-        setConfirmRemovalModal({
+        setConfirmRemovalModal?.({
           isOpen: false,
           category: '',
           categoryName: '',
@@ -155,14 +182,15 @@ export const createDashboardHandlers = (
 
   const handleDeleteCard = (cardId: string) => {
     const card = cards.find(c => c.id === cardId);
-    setConfirmModal({
+    setConfirmModal?.({
       isOpen: true,
       title: "Elimina Carta",
       message: `Sei sicuro di voler eliminare ${card?.cardName || 'questa carta'}?`,
       onConfirm: async () => {
+        if (!deleteCard) return;
         const success = await deleteCard(cardId);
         if (success) {
-          setConfirmModal({ isOpen: false, title: "", message: "", onConfirm: () => {} });
+          setConfirmModal?.({ isOpen: false, title: "", message: "", onConfirm: () => {} });
         }
       }
     });
@@ -170,14 +198,15 @@ export const createDashboardHandlers = (
 
   const handleDeleteAccount = (accountId: string) => {
     const account = accounts.find(a => a.id === accountId);
-    setConfirmModal({
+    setConfirmModal?.({
       isOpen: true,
       title: "Elimina Conto",
       message: `Sei sicuro di voler eliminare ${account?.accountName || 'questo conto'}?`,
       onConfirm: async () => {
+        if (!deleteAccount) return;
         const success = await deleteAccount(accountId);
         if (success) {
-          setConfirmModal({ isOpen: false, title: "", message: "", onConfirm: () => {} });
+          setConfirmModal?.({ isOpen: false, title: "", message: "", onConfirm: () => {} });
         }
       }
     });
@@ -185,14 +214,15 @@ export const createDashboardHandlers = (
 
   const handleDeleteTransaction = (transactionId: string) => {
     const transaction = transactions.find(t => t.id === transactionId);
-    setConfirmModal({
+    setConfirmModal?.({
       isOpen: true,
       title: "Elimina Transazione",
       message: `Sei sicuro di voler eliminare la transazione "${transaction?.title || 'questa transazione'}"?`,
       onConfirm: async () => {
+        if (!deleteTransaction) return;
         const success = await deleteTransaction(transactionId);
         if (success) {
-          setConfirmModal({ isOpen: false, title: "", message: "", onConfirm: () => {} });
+          setConfirmModal?.({ isOpen: false, title: "", message: "", onConfirm: () => {} });
         }
       }
     });
@@ -211,4 +241,4 @@ export const createDashboardHandlers = (
     handleDeleteAccount,
     handleDeleteTransaction
   };
-}; 
+};
