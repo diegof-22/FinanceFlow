@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { LucideIcon, Plus, Edit3, Trash2, Check, X } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { LucideIcon, Plus, Edit3, Trash2, Check, X, MoreHorizontal } from 'lucide-react';
 
 interface BudgetCategoryCardProps {
   title: string;
@@ -25,46 +25,52 @@ export const BudgetCategoryCard: React.FC<BudgetCategoryCardProps> = ({
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [budgetInput, setBudgetInput] = useState(budget?.toString() || '');
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setIsMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const percentage = budget ? Math.min((amount / budget) * 100, 100) : 0;
   const isOverBudget = budget ? amount > budget : false;
 
   const colorClasses = {
     blue: {
-      bg: 'from-blue-500/10 via-blue-600/5 to-transparent',
-      border: 'border-blue-400/20',
-      icon: 'text-blue-400',
-      progress: 'from-blue-500 to-blue-600'
+      border: 'border-[#f0f0f0]',
+      icon: 'text-blue-500',
+      progress: 'from-blue-400 to-blue-500'
     },
     green: {
-      bg: 'from-green-500/10 via-green-600/5 to-transparent',
-      border: 'border-green-400/20',
-      icon: 'text-green-400',
-      progress: 'from-green-500 to-green-600'
+      border: 'border-[#f0f0f0]',
+      icon: 'text-green-500',
+      progress: 'from-green-400 to-green-500'
     },
     red: {
-      bg: 'from-red-500/10 via-red-600/5 to-transparent',
-      border: 'border-red-400/20',
-      icon: 'text-red-400',
-      progress: 'from-red-500 to-red-600'
+      border: 'border-[#f0f0f0]',
+      icon: 'text-red-500',
+      progress: 'from-red-400 to-red-500'
     },
     yellow: {
-      bg: 'from-yellow-500/10 via-yellow-600/5 to-transparent',
-      border: 'border-yellow-400/20',
-      icon: 'text-yellow-400',
-      progress: 'from-yellow-500 to-yellow-600'
+      border: 'border-[#f0f0f0]',
+      icon: 'text-yellow-500',
+      progress: 'from-yellow-400 to-yellow-500'
     },
     purple: {
-      bg: 'from-purple-500/10 via-purple-600/5 to-transparent',
-      border: 'border-purple-400/20',
-      icon: 'text-purple-400',
-      progress: 'from-purple-500 to-purple-600'
+      border: 'border-[#f0f0f0]',
+      icon: 'text-purple-500',
+      progress: 'from-purple-400 to-purple-500'
     },
     pink: {
-      bg: 'from-pink-500/10 via-pink-600/5 to-transparent',
-      border: 'border-pink-400/20',
-      icon: 'text-pink-400',
-      progress: 'from-pink-500 to-pink-600'
+      border: 'border-[#f0f0f0]',
+      icon: 'text-pink-500',
+      progress: 'from-pink-400 to-pink-500'
     }
   };
 
@@ -89,132 +95,134 @@ export const BudgetCategoryCard: React.FC<BudgetCategoryCardProps> = ({
 
   return (
     <motion.div
-      className={`bg-gradient-to-br ${currentColorClasses.bg} rounded-xl p-4 border ${currentColorClasses.border} backdrop-blur-sm transition-all duration-300 min-h-[200px] flex flex-col`}
-      whileHover={{ y: -2, scale: 1.02 }}
+      className={`bg-[#ffffff] shadow-sm rounded-[32px] p-6 lg:p-8 border ${currentColorClasses.border} transition-all duration-300 min-h-[220px] flex flex-col relative`}
+      whileHover={{ y: -2, scale: 1.01 }}
       layout
     >
       
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center space-x-3">
-          <div className="p-2 rounded-lg bg-white/10">
-            <Icon className={`h-5 w-5 ${currentColorClasses.icon}`} />
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center space-x-4">
+          <div className="p-3 rounded-2xl bg-[#f5f5f5]">
+            <Icon className={`h-6 w-6 ${currentColorClasses.icon}`} />
           </div>
           <div>
-            <h3 className="text-white font-semibold text-sm">{title}</h3>
-            <p className="text-white/60 text-xs">
-              Speso: €{amount.toFixed(2)}
-            </p>
+            <h3 className="text-[#080808] font-bold text-base">{title}</h3>
           </div>
         </div>
         
-       
-        <div className="flex items-center space-x-1">
-          {budget ? (
-            <>
-              <motion.button
-                onClick={() => setIsEditing(true)}
-                className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 transition-colors"
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
-                title="Modifica budget"
-              >
-                <Edit3 className="h-3 w-3 text-white/70" />
-              </motion.button>
-              <motion.button
-                onClick={handleRemove}
-                className="p-1.5 rounded-lg bg-red-500/20 hover:bg-red-500/30 transition-colors"
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
-                title="Rimuovi budget"
-              >
-                <Trash2 className="h-3 w-3 text-red-400" />
-              </motion.button>
-            </>
-          ) : (
-            <motion.button
-              onClick={() => setIsEditing(true)}
-              className="p-1.5 rounded-lg bg-green-500/20 hover:bg-green-500/30 transition-colors"
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-              title="Aggiungi budget"
+        {budget && (
+          <div className="relative" ref={menuRef}>
+            <button
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              className="p-2 rounded-full hover:bg-[#f5f5f5] transition-colors"
             >
-              <Plus className="h-3 w-3 text-green-400" />
-            </motion.button>
-          )}
-        </div>
+              <MoreHorizontal className="h-5 w-5 text-[#080808]/60" />
+            </button>
+
+            <AnimatePresence>
+              {isMenuOpen && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95, y: -10 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.95, y: -10 }}
+                  transition={{ duration: 0.15 }}
+                  className="absolute right-0 top-full mt-2 w-48 bg-white rounded-2xl shadow-xl border border-[#f0f0f0] overflow-hidden z-20"
+                >
+                  <div className="py-1">
+                    <button
+                      onClick={() => {
+                        setIsEditing(true);
+                        setIsMenuOpen(false);
+                      }}
+                      className="w-full text-left px-4 py-3 text-sm text-[#080808] hover:bg-[#f5f5f5] flex items-center space-x-3 transition-colors"
+                    >
+                      <Edit3 className="h-4 w-4 text-[#080808]/70" />
+                      <span className="font-medium">Modifica Budget</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        handleRemove();
+                        setIsMenuOpen(false);
+                      }}
+                      className="w-full text-left px-4 py-3 text-sm text-red-500 hover:bg-red-50 flex items-center space-x-3 transition-colors"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      <span className="font-medium">Rimuovi Budget</span>
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        )}
       </div>
 
-      
       {isEditing && (
         <motion.div
-          className="mb-4 p-3 bg-white/5 rounded-lg border border-white/10"
+          className="mb-4 p-4 bg-[#f9f9f9] rounded-2xl border border-[#f0f0f0]"
           initial={{ opacity: 0, height: 0 }}
           animate={{ opacity: 1, height: 'auto' }}
           exit={{ opacity: 0, height: 0 }}
         >
-          <div className="flex items-center space-x-2">
-            <div className="flex-1">
+          <div className="flex items-center space-x-3">
+            <div className="flex-1 relative">
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#080808]/40 font-medium">€</span>
               <input
                 type="number"
                 value={budgetInput}
                 onChange={(e) => setBudgetInput(e.target.value)}
-                placeholder="Inserisci budget..."
-                className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-white/50 text-sm focus:outline-none focus:border-white/40"
+                placeholder="0.00"
+                className="w-full pl-8 pr-4 py-3 bg-white border border-[#e5e5e5] rounded-xl text-[#080808] font-medium text-sm focus:outline-none focus:ring-2 focus:ring-[#080808]/5 focus:border-[#080808]/20 transition-all shadow-sm"
                 autoFocus
               />
             </div>
-            <motion.button
+            <button
               onClick={handleSaveBudget}
-              className="p-2 rounded-lg bg-green-500/20 hover:bg-green-500/30 transition-colors"
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
+              className="p-3 rounded-xl bg-[#080808] text-white hover:bg-[#080808]/80 transition-all hover:scale-105 active:scale-95 shadow-sm"
             >
-              <Check className="h-3 w-3 text-green-400" />
-            </motion.button>
-            <motion.button
+              <Check className="h-4 w-4" />
+            </button>
+            <button
               onClick={handleCancelEdit}
-              className="p-2 rounded-lg bg-red-500/20 hover:bg-red-500/30 transition-colors"
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
+              className="p-3 rounded-xl bg-white border border-[#f0f0f0] text-[#080808] hover:bg-[#f5f5f5] transition-all hover:scale-105 active:scale-95 shadow-sm"
             >
-              <X className="h-3 w-3 text-red-400" />
-            </motion.button>
+              <X className="h-4 w-4" />
+            </button>
           </div>
         </motion.div>
       )}
 
-      
       {budget && !isEditing && (
-        <div className="space-y-3 flex-1 flex flex-col justify-center">
-          <div className="flex items-center justify-between">
-            <span className="text-white/70 text-xs">Budget mensile</span>
-            <span className="text-white font-semibold text-sm">€{budget.toFixed(2)}</span>
+        <div className="flex-1 flex flex-col justify-end">
+          <div className="mb-4 flex items-baseline gap-1">
+            <span className="text-3xl sm:text-4xl font-bold text-[#080808] tracking-tight">€{amount.toFixed(2)}</span>
+            <span className="text-2xl sm:text-3xl font-bold text-[#080808]/30 tracking-tight mx-1">/</span>
+            <span className="text-3xl sm:text-4xl font-bold text-[#080808]/30 tracking-tight">€{budget.toFixed(2)}</span>
           </div>
           
-          
-          <div className="space-y-2">
-            <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden">
+          <div className="space-y-3">
+            <div className="w-full h-3 sm:h-4 bg-[#f5f5f5] rounded-full overflow-hidden shadow-inner">
               <motion.div
                 className={`h-full rounded-full ${
                   isOverBudget 
-                    ? 'bg-gradient-to-r from-red-500 to-red-600' 
+                    ? 'bg-red-500' 
                     : `bg-gradient-to-r ${currentColorClasses.progress}`
                 }`}
                 initial={{ width: 0 }}
                 animate={{ width: `${Math.min(percentage, 100)}%` }}
-                transition={{ duration: 1, delay: 0.2 }}
+                transition={{ duration: 1, delay: 0.2, ease: "easeOut" }}
               />
             </div>
             
             <div className="flex items-center justify-between">
-              <span className={`text-xs ${isOverBudget ? 'text-red-400' : 'text-white/60'}`}>
+              <span className={`text-xs font-bold ${isOverBudget ? 'text-red-500' : 'text-[#080808]/40'}`}>
                 {percentage.toFixed(0)}% utilizzato
               </span>
-              <span className={`text-xs font-medium ${
-                isOverBudget ? 'text-red-400' : 'text-green-400'
+              <span className={`text-xs font-bold ${
+                isOverBudget ? 'text-red-500' : 'text-green-500'
               }`}>
                 {isOverBudget 
-                  ? `+€${(amount - budget).toFixed(2)}` 
+                  ? `+€${(amount - budget).toFixed(2)} extra` 
                   : `€${(budget - amount).toFixed(2)} rimasti`
                 }
               </span>
@@ -223,19 +231,18 @@ export const BudgetCategoryCard: React.FC<BudgetCategoryCardProps> = ({
         </div>
       )}
 
-      
       {!budget && !isEditing && (
-        <div className="text-center py-8 flex-1 flex flex-col justify-center">
-          <p className="text-white/50 text-xs mb-4">Nessun budget impostato</p>
-          <motion.button
+        <div className="flex-1 flex flex-col justify-center items-center text-center py-4">
+          <div className="w-12 h-12 rounded-full bg-[#f5f5f5] flex items-center justify-center mb-3">
+            <Plus className="h-5 w-5 text-[#080808]/40" />
+          </div>
+          <p className="text-[#080808]/50 text-sm font-medium mb-4">Nessun budget per questa categoria</p>
+          <button
             onClick={() => setIsEditing(true)}
-            className="px-4 py-2 bg-gradient-to-r from-green-500/20 to-green-600/20 hover:from-green-500/30 hover:to-green-600/30 text-green-400 rounded-lg text-xs font-medium transition-all duration-300 flex items-center space-x-2 mx-auto border border-green-400/20"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+            className="px-6 py-2.5 bg-[#080808] text-white rounded-full text-sm font-bold transition-all hover:bg-[#080808]/80 hover:scale-105 active:scale-95 shadow-md"
           >
-            <Plus className="h-3 w-3" />
-            <span>Aggiungi Budget</span>
-          </motion.button>
+            Imposta Budget
+          </button>
         </div>
       )}
     </motion.div>

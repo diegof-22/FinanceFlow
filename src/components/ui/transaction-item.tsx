@@ -14,13 +14,13 @@ import {
   Trash2,
   MoreVertical
 } from 'lucide-react';
-import { Transaction, OfflineTransaction } from '../../types/finance';
+import { Transaction } from '../../types/finance';
 import { formatDate } from '../../utils/financeHandlers';
 
 export interface TransactionItemProps {
-  transaction: Transaction | OfflineTransaction;
+  transaction: Transaction;
   showBorder?: boolean;
-  onDelete?: (transactionId: string) => void;
+  onDelete: (id: string) => void;
 }
 
 export const TransactionItem: React.FC<TransactionItemProps> = ({ 
@@ -46,21 +46,21 @@ export const TransactionItem: React.FC<TransactionItemProps> = ({
     return icons[category as keyof typeof icons] || DollarSign;
   };
 
-  const getCategoryColor = (category: string) => {
-    const colors = {
-      shopping: 'text-blue-400',
-      transport: 'text-green-400',
-      home: 'text-red-400',
-      food: 'text-yellow-400',
-      entertainment: 'text-purple-400',
-      health: 'text-pink-400',
-      salary: 'text-green-400',
-      freelance: 'text-blue-400',
-      investment: 'text-purple-400',
-      gift: 'text-pink-400',
-      other: 'text-gray-400'
+  const getCategoryStyles = (category: string) => {
+    const styles = {
+      shopping: 'bg-blue-50 text-blue-600 border border-blue-100',
+      transport: 'bg-green-50 text-green-600 border border-green-100',
+      home: 'bg-red-50 text-red-600 border border-red-100',
+      food: 'bg-yellow-50 text-yellow-600 border border-yellow-100',
+      entertainment: 'bg-purple-50 text-purple-600 border border-purple-100',
+      health: 'bg-pink-50 text-pink-600 border border-pink-100',
+      salary: 'bg-emerald-50 text-emerald-600 border border-emerald-100',
+      freelance: 'bg-indigo-50 text-indigo-600 border border-indigo-100',
+      investment: 'bg-violet-50 text-violet-600 border border-violet-100',
+      gift: 'bg-orange-50 text-orange-600 border border-orange-100',
+      other: 'bg-gray-50 text-gray-600 border border-gray-100'
     };
-    return colors[category as keyof typeof colors] || 'text-gray-400';
+    return styles[category as keyof typeof styles] || 'bg-gray-50 text-gray-600 border border-gray-100';
   };
 
 
@@ -71,61 +71,55 @@ export const TransactionItem: React.FC<TransactionItemProps> = ({
   };
 
   const IconComponent = getCategoryIcon(transaction.category);
-  const iconColor = getCategoryColor(transaction.category);
-  const amountColor = transaction.type === 'income' ? 'text-green-400' : 'text-red-400';
+  const categoryStyles = getCategoryStyles(transaction.category);
+  const amountColor = transaction.type === 'income' ? 'text-green-600' : 'text-red-500';
 
   return (
     <motion.div 
-      className={`flex items-center justify-between py-4 ${showBorder ? 'border-b border-white/10' : ''}`}
+      className={`flex items-center justify-between p-4 mb-2 bg-[#f9f9f9]/70 border border-transparent rounded-[24px] hover:bg-white hover:border-[#f0f0f0] hover:shadow-sm transition-all cursor-pointer`}
       initial={{ opacity: 0, x: -20 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.3 }}
     >
-      <div className="flex items-center space-x-4">
-        <div className={`p-2 rounded-lg bg-white/5 border border-white/10`}>
-          <IconComponent className={`h-5 w-5 ${iconColor}`} />
+      <div className="flex items-center space-x-4 overflow-hidden pr-2">
+        <div className={`flex-shrink-0 p-2.5 sm:p-3 rounded-2xl ${categoryStyles}`}>
+          <IconComponent className="h-4 w-4 sm:h-5 sm:w-5" />
         </div>
-        <div>
-          <p className="text-white font-medium">{transaction.title}</p>
-          <p className="text-white/60 text-sm">
-            {formatDate(transaction.date)}
-            {transaction.description && (
-              <span className="ml-2 text-white/40">• {transaction.description}</span>
-            )}
-          </p>
+        <div className="min-w-0">
+          <p className="text-[#080808] font-semibold text-sm sm:text-base truncate">{transaction.title}</p>
+          <div className="flex items-center text-[#080808]/60 text-xs sm:text-sm mt-0.5 space-x-2 truncate">
+            <span className="capitalize truncate">{transaction.description || transaction.category.replace('_', ' ')}</span>
+            <span className="flex-shrink-0">•</span>
+            <span className="flex-shrink-0">{formatDate(transaction.date)}</span>
+          </div>
         </div>
       </div>
-      <div className="flex items-center space-x-3">
-        <div className="text-right">
-          <p className={`font-semibold ${amountColor}`}>
-            {formatAmount(transaction.amount.toString(), transaction.type)}
-          </p>
-          <p className="text-white/40 text-xs capitalize">
-            {transaction.category.replace('_', ' ')}
-          </p>
-        </div>
-        
+
+      <div className="flex items-center space-x-2 sm:space-x-4 flex-shrink-0">
+        <span className={`font-bold text-sm sm:text-base whitespace-nowrap ${amountColor}`}>
+          {formatAmount(transaction.amount.toString(), transaction.type)}
+        </span>
         {onDelete && (
-          <div className="relative">
+          <div className="relative flex justify-center">
             <button
               onClick={() => setShowMenu(!showMenu)}
-              className="p-1 hover:bg-white/10 rounded-full transition-colors"
+              className="p-2 hover:bg-[#f0f0f0] rounded-full transition-colors"
             >
-              <MoreVertical className="h-4 w-4 text-white/60" />
+              <MoreVertical className="h-5 w-5 text-[#080808]/60" />
             </button>
             
             {showMenu && (
               <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="absolute right-0 top-8 bg-gray-800 border border-white/20 rounded-lg shadow-lg z-10"
+                className="absolute right-10 top-0 bg-white border border-[#e5e5e5] rounded-xl shadow-lg z-50 min-w-[120px]"
               >
                 <button
                   onClick={() => {
                     onDelete(transaction.id);
                     setShowMenu(false);
                   }}
-                  className="flex items-center space-x-2 px-2 py-1 sm:px-4 sm:py-2 border border-red-400 text-red-400 hover:bg-white/10 rounded-lg transition-colors w-full text-left text-xs sm:text-base"
+                  className="flex items-center space-x-2 px-4 py-3 text-red-500 hover:bg-red-50 hover:text-red-600 rounded-xl transition-colors w-full text-left text-sm font-medium"
                 >
                   <Trash2 className="h-4 w-4" />
                   <span>Elimina</span>

@@ -3,288 +3,250 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   TrendingUp, 
   TrendingDown, 
-  BarChart3, 
   Activity,
   AlertCircle,
-  Filter
+  Plus
 } from 'lucide-react';
-
-import {mockCryptoData, mockStockData, type StockData, type CryptoData} from '../services/mockData';
-
-import { LoadingScreen } from '../components/ui/loadingscreen';
-import { FilterBar, FilterOption } from '../components/ui/filter-bar';
-
-
+import { useMarketApi, MarketCoin, TrendingCoin } from '@/hooks/useMarketApi';
+import { useFinanceDataContext } from '@/contexts/FinanceDataContext';
+import { DashboardSkeleton } from '../components/ui/skeleton';
+import { AddInvestmentModal } from '../components/modal/add-investment-modal';
 
 export const Trading = () => {
-  const [activeTab, setActiveTab] = useState<'crypto' | 'stocks' | 'all'>('crypto');
-  const [cryptoData, setCryptoData] = useState<CryptoData[]>([]);
-  const [stockData] = useState<StockData[]>(mockStockData);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
+  const { getTrending, getMarketCoins } = useMarketApi();
+  const { investments } = useFinanceDataContext();
   
+  const [trending, setTrending] = useState<TrendingCoin[]>([]);
+  const [market, setMarket] = useState<MarketCoin[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  
+  const [selectedAsset, setSelectedAsset] = useState<MarketCoin | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
-    setCryptoData(mockCryptoData);
-    setError('Dati di esempio: le quotazioni sono statiche e non aggiornate in tempo reale.');
-  }, []);
+    let mounted = true;
+    const loadData = async () => {
+      try {
+        const [trendData, marketData] = await Promise.all([
+          getTrending(),
+          getMarketCoins()
+        ]);
+        if (mounted) {
+          setTrending(trendData);
+          setMarket(marketData);
+        }
+      } catch (err) {
+        if (mounted) setError('Errore nel caricamento dei dati di mercato.');
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    };
+    loadData();
+    return () => { mounted = false; };
+  }, [getTrending, getMarketCoins]);
 
+  const handleBuy = (coin: MarketCoin) => {
+    setSelectedAsset(coin);
+    setIsModalOpen(true);
+  };
 
   const formatPrice = (price: number) => {
-    if (price < 1) {
-      return `$${price.toFixed(4)}`;
-    }
+    if (price < 1) return `$${price.toFixed(4)}`;
     return `$${price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   };
 
   const formatMarketCap = (marketCap: number) => {
-    if (marketCap >= 1e12) {
-      return `$${(marketCap / 1e12).toFixed(2)}T`;
-    }
-    if (marketCap >= 1e9) {
-      return `$${(marketCap / 1e9).toFixed(2)}B`;
-    }
-    if (marketCap >= 1e6) {
-      return `$${(marketCap / 1e6).toFixed(2)}M`;
-    }
+    if (marketCap >= 1e12) return `$${(marketCap / 1e12).toFixed(2)}T`;
+    if (marketCap >= 1e9) return `$${(marketCap / 1e9).toFixed(2)}B`;
+    if (marketCap >= 1e6) return `$${(marketCap / 1e6).toFixed(2)}M`;
     return `$${marketCap.toLocaleString()}`;
   };
 
-  const formatVolume = (volume: number) => {
-    if (volume >= 1e9) {
-      return `$${(volume / 1e9).toFixed(2)}B`;
-    }
-    if (volume >= 1e6) {
-      return `$${(volume / 1e6).toFixed(2)}M`;
-    }
-    return `$${volume.toLocaleString()}`;
-  };
 
-  
-  const filteredCryptoData = cryptoData.filter(crypto =>
-    crypto.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    crypto.symbol.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  const filteredStockData = stockData.filter(stock =>
-    stock.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    stock.symbol.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
- 
-  const tradingFilters: FilterOption[] = [
-    {
-      id: 'all',
-      label: 'Tutti',
-      icon: Filter,
-      count: cryptoData.length + stockData.length,
-    },
-    {
-      id: 'crypto',
-      label: 'Crypto',
-      icon: TrendingUp,
-      count: cryptoData.length,
-    },
-    {
-      id: 'stocks',
-      label: 'Azioni',
-      icon: BarChart3,
-      count: stockData.length,
-    },
-  ];
-
-
-  const AssetCard = ({ asset, type }: { asset: CryptoData | StockData, type: 'crypto' | 'stock' }) => {
-    const isCrypto = type === 'crypto';
-    const data = isCrypto ? (asset as CryptoData) : (asset as StockData);
+  const portfolio = investments.map(inv => {
+    const liveCoin = market.find(m => m.id === inv.assetId);
+    const livePrice = liveCoin ? liveCoin.price : inv.entryPrice;
+    const currentTotal = inv.amount * livePrice;
+    const investedTotal = inv.amount * inv.entryPrice;
+    const profitLoss = currentTotal - investedTotal;
+    const profitLossPct = (profitLoss / investedTotal) * 100;
     
-    const name = isCrypto ? data.name : (data as StockData).name;
-    const symbol = isCrypto ? data.symbol : (data as StockData).symbol;
-    const price = isCrypto ? (data as CryptoData).quote.USD.price : (data as StockData).price;
-    const change24h = isCrypto ? (data as CryptoData).quote.USD.percent_change_24h : (data as StockData).changePercent;
-    const volume = isCrypto ? (data as CryptoData).quote.USD.volume_24h : (data as StockData).volume;
-    const marketCap = isCrypto ? (data as CryptoData).quote.USD.market_cap : (data as StockData).marketCap;
-    
-    const isPositive = change24h > 0;
-
-  
-    const getCardColor = (symbol: string) => {
-      const colors = [
-        'bg-blue-500/20 border-blue-400/30',
-        'bg-purple-500/20 border-purple-400/30',
-        'bg-pink-500/20 border-pink-400/30',
-        'bg-red-500/20 border-red-400/30',
-        'bg-orange-500/20 border-orange-400/30',
-        'bg-yellow-500/20 border-yellow-400/30',
-        'bg-green-500/20 border-green-400/30',
-        'bg-teal-500/20 border-teal-400/30',
-        'bg-cyan-500/20 border-cyan-400/30',
-        'bg-indigo-500/20 border-indigo-400/30',
-      ];
-      
-      const hash = symbol.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-      return colors[hash % colors.length];
+    return {
+      ...inv,
+      livePrice,
+      currentTotal,
+      investedTotal,
+      profitLoss,
+      profitLossPct,
+      image: liveCoin?.image || ''
     };
-
-    const getIconColor = (symbol: string) => {
-      const colors = [
-        'bg-blue-500',
-        'bg-purple-500',
-        'bg-pink-500',
-        'bg-red-500',
-        'bg-orange-500',
-        'bg-yellow-500',
-        'bg-green-500',
-        'bg-teal-500',
-        'bg-cyan-500',
-        'bg-indigo-500',
-      ];
-      
-      const hash = symbol.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-      return colors[hash % colors.length];
-    };
-
-    const cardColor = getCardColor(symbol);
-    const iconColor = getIconColor(symbol);
-
-    return (
-      <motion.div
-        className={`${cardColor} backdrop-blur-xl border rounded-2xl p-6 hover:scale-105 hover:shadow-2xl hover:shadow-blue-500/10 transition-all duration-300 group`}
-        whileHover={{ scale: 1.02, y: -2 }}
-        whileTap={{ scale: 0.98 }}
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
-      >
-        <div className="flex items-start justify-between mb-4">
-          <div className="flex items-left space-x-3">
-            
-            <div className={`w-32 h-14 ${iconColor} rounded-xl flex flex-col items-center justify-center shadow-lg group-hover:shadow-xl transition-all duration-300`}>
-              <span className="text-white font-bold text-lg leading-tight">{symbol}</span>
-              <span className="text-white/80 font-medium text-sm leading-tight -mt-1 text-center max-w-[90px] truncate">{name}</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="text-blue-200/70 text-sm">Prezzo</span>
-            <span className="text-white font-bold text-lg">{formatPrice(price)}</span>
-          </div>
-
-          <div className="flex items-center justify-between">
-            <span className="text-blue-200/70 text-sm">24h</span>
-            <div className={`flex items-center space-x-1 ${isPositive ? 'text-green-400' : 'text-red-400'}`}>
-              {isPositive ? (
-                <TrendingUp className="w-4 h-4" />
-              ) : (
-                <TrendingDown className="w-4 h-4" />
-              )}
-              <span className="font-semibold">{Math.abs(change24h).toFixed(2)}%</span>
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between">
-            <span className="text-blue-200/70 text-sm">Volume</span>
-            <span className="text-white font-medium">{formatVolume(volume)}</span>
-          </div>
-
-          <div className="flex items-center justify-between">
-            <span className="text-blue-200/70 text-sm">Market Cap</span>
-            <span className="text-white font-medium">{formatMarketCap(marketCap)}</span>
-          </div>
-        </div>
-      </motion.div>
-    );
-  };
-
-  let assetsToShow: { asset: CryptoData | StockData, type: 'crypto' | 'stock' }[] = [];
-  if (activeTab === 'all') {
-    assetsToShow = [
-      ...filteredCryptoData.map(asset => ({ asset, type: 'crypto' as const })),
-      ...filteredStockData.map(asset => ({ asset, type: 'stock' as const })),
-    ];
-  } else if (activeTab === 'crypto') {
-    assetsToShow = filteredCryptoData.map(asset => ({ asset, type: 'crypto' as const }));
-  } else {
-    assetsToShow = filteredStockData.map(asset => ({ asset, type: 'stock' as const }));
-  }
+  });
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-950 via-slate-900 to-blue-900 p-6">
-      <div className="max-w-7xl mx-auto">
+    <div className="p-4 sm:p-6 lg:p-8 pb-20 md:pb-8 min-h-screen">
+      <div className="max-w-7xl mx-auto space-y-10">
         <motion.div
-          className="mb-8"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          <div className="flex items-center justify-between">
-            <div className="text-left">
-              <h1 className="text-3xl lg:text-4xl font-bold text-white mb-2">
-                Trading
-              </h1>
-              <p className="text-white/70 text-lg">
-                Consulta quotazioni di criptovalute e azioni (dati di esempio)
-              </p>
-            </div>
-          </div>
+          <h1 className="text-2xl sm:text-3xl font-semibold text-[#080808] mb-1">Trading & Investimenti</h1>
+          <p className="text-[#080808]/70 text-sm sm:text-base">Esplora il mercato e traccia il tuo portafoglio in tempo reale.</p>
         </motion.div>
-
-        
-        <FilterBar
-          filters={tradingFilters}
-          activeFilter={activeTab}
-          onFilterChange={id => setActiveTab(id as 'crypto' | 'stocks' | 'all')}
-        />
 
         {error && (
           <motion.div
-            className="mb-6 bg-yellow-500/20 border border-yellow-400/30 rounded-2xl p-4 backdrop-blur-sm"
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
+            className="bg-red-50 border border-red-100 rounded-2xl p-4 shadow-sm flex items-center space-x-3"
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }}
           >
-            <div className="flex items-center space-x-3">
-              <AlertCircle className="w-5 h-5 text-yellow-400" />
-              <p className="text-yellow-200 font-medium">{error}</p>
-            </div>
+            <AlertCircle className="w-5 h-5 text-red-600" />
+            <p className="text-red-800 font-medium">{error}</p>
           </motion.div>
         )}
 
-        <AnimatePresence mode="wait">
-          {loading ? (
-            <LoadingScreen />
-          ) : (
-            <motion.div
-              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 20 }}
-              transition={{ duration: 0.3 }}
-            >
-              {assetsToShow.length > 0 ? (
-                assetsToShow.map((item, index) => (
-                  <motion.div
-                    key={item.type === 'crypto' ? (item.asset as CryptoData).id : (item.asset as StockData).symbol}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3, delay: index * 0.1 }}
-                  >
-                    <AssetCard asset={item.asset} type={item.type} />
-                  </motion.div>
-                ))
+        {loading ? (
+          <DashboardSkeleton />
+        ) : (
+          <>
+            
+            {trending.length > 0 && (
+              <section>
+                <h2 className="text-lg font-bold text-[#080808] mb-4 flex items-center">
+                  🔥 Trending in Hype
+                </h2>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {trending.map(coin => (
+                    <motion.div 
+                      key={coin.id}
+                      whileHover={{ scale: 1.02 }}
+                      className="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm flex flex-col items-center justify-center space-y-2"
+                    >
+                      <img src={coin.thumb} alt={coin.name} className="w-12 h-12 rounded-full" />
+                      <div className="text-center">
+                        <p className="font-bold text-[#080808]">{coin.symbol}</p>
+                        <div className={`flex items-center justify-center space-x-1 text-sm ${coin.priceChange24h >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                          {coin.priceChange24h >= 0 ? <TrendingUp className="w-3 h-3"/> : <TrendingDown className="w-3 h-3"/>}
+                          <span>{Math.abs(coin.priceChange24h).toFixed(2)}%</span>
+                        </div>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              </section>
+            )}
+
+            
+            <section>
+              <h2 className="text-lg font-bold text-[#080808] mb-4 flex items-center">
+                💼 Il mio Portafoglio
+              </h2>
+              {portfolio.length > 0 ? (
+                <div className="bg-white border border-gray-100 rounded-3xl overflow-hidden shadow-sm divide-y divide-gray-100">
+                  {portfolio.map(inv => {
+                    const isPositive = inv.profitLoss >= 0;
+                    return (
+                      <div key={inv.id} className="flex items-center justify-between p-4 hover:bg-gray-50/50 transition-colors group">
+                        
+                        <div className="flex items-center space-x-3 w-1/3">
+                          {inv.image ? (
+                            <img src={inv.image} alt={inv.name} className="w-10 h-10 rounded-full" />
+                          ) : (
+                            <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
+                              <span className="text-sm font-bold text-gray-500">{inv.symbol.charAt(0)}</span>
+                            </div>
+                          )}
+                          <div className="flex flex-col">
+                            <span className="font-bold text-[#080808] text-sm sm:text-base truncate">{inv.name}</span>
+                            <span className="text-xs text-gray-500 font-medium uppercase">{inv.amount} {inv.symbol}</span>
+                          </div>
+                        </div>
+
+                        
+                        <div className="hidden sm:flex flex-col items-center justify-center w-1/3 text-center">
+                          <span className="text-xs text-gray-500 uppercase font-medium">Acquistato a</span>
+                          <span className="font-medium text-[#080808] text-sm">{formatPrice(inv.entryPrice)}</span>
+                        </div>
+
+                        
+                        <div className="flex flex-col items-end w-1/3 text-right">
+                          <span className="font-bold text-[#080808] text-sm sm:text-base">{formatPrice(inv.currentTotal)}</span>
+                          <span className={`text-xs sm:text-sm font-semibold flex items-center space-x-1 ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
+                            <span>{isPositive ? '+' : ''}{formatPrice(inv.profitLoss)}</span>
+                            <span className="text-[10px] sm:text-xs bg-gray-100/50 rounded-full px-1.5 py-0.5">
+                              {Math.abs(inv.profitLossPct).toFixed(2)}%
+                            </span>
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               ) : (
-                <div className="col-span-full text-center py-20">
-                  <Activity className="w-16 h-16 text-blue-400/50 mx-auto mb-4" />
-                  <p className="text-blue-200/70 text-lg">Nessun asset trovato</p>
+                <div className="bg-gray-50 border border-gray-100 border-dashed rounded-3xl p-8 text-center">
+                  <p className="text-gray-500 mb-2">Non hai ancora investimenti attivi.</p>
+                  <p className="text-sm text-gray-400">Clicca su "Compra" in un asset qui sotto per aggiungerlo al tuo portafoglio.</p>
                 </div>
               )}
-            </motion.div>
-          )}
-        </AnimatePresence>
+            </section>
+
+            
+            <section>
+              <h2 className="text-lg font-bold text-[#080808] mb-4">📈 Mercato Live (Top 50)</h2>
+              <div className="bg-white border border-gray-100 rounded-3xl overflow-hidden shadow-sm divide-y divide-gray-100">
+                {market.map(coin => {
+                  const isPositive = coin.change24h >= 0;
+                  return (
+                    <div 
+                      key={coin.id} 
+                      onClick={() => handleBuy(coin)}
+                      className="flex items-center justify-between p-4 hover:bg-gray-50/50 transition-colors cursor-pointer group"
+                    >
+                      
+                      <div className="flex items-center space-x-3 w-1/3">
+                        <img src={coin.image} alt={coin.name} className="w-10 h-10 rounded-full" />
+                        <div className="flex flex-col">
+                          <span className="font-bold text-[#080808] text-sm sm:text-base truncate">{coin.name}</span>
+                          <span className="text-xs text-gray-500 font-medium uppercase">{coin.symbol}</span>
+                        </div>
+                      </div>
+
+                      
+                      <div className="hidden sm:flex items-center justify-center w-1/3 opacity-50 group-hover:opacity-100 transition-opacity">
+                        <svg width="60" height="20" viewBox="0 0 60 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path 
+                            d={isPositive 
+                              ? "M0 15 Q5 10, 10 12 T20 8 T30 14 T40 5 T50 10 T60 2" 
+                              : "M0 5 Q5 10, 10 8 T20 12 T30 6 T40 15 T50 10 T60 18"}
+                            stroke={isPositive ? "#16a34a" : "#dc2626"} 
+                            strokeWidth="1.5" 
+                            strokeLinecap="round" 
+                            fill="none"
+                          />
+                        </svg>
+                      </div>
+
+                      
+                      <div className="flex flex-col items-end w-1/3 text-right">
+                        <span className="font-bold text-[#080808] text-sm sm:text-base">{formatPrice(coin.price)}</span>
+                        <span className={`text-xs sm:text-sm font-semibold ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
+                          {isPositive ? '+' : ''}{coin.change24h.toFixed(2)}%
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+          </>
+        )}
       </div>
+
+      <AddInvestmentModal 
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        asset={selectedAsset}
+      />
     </div>
   );
 };

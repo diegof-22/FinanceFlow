@@ -19,32 +19,32 @@ export const QuickActionCard: React.FC<QuickActionCardProps> = ({
 }) => {
   const colorClasses = {
     blue: {
-      bg: "from-blue-500/15 to-blue-600/15",
-      border: "border-blue-500/20",
-      hover: "hover:from-blue-500/25 hover:to-blue-600/25 hover:border-blue-400/30",
-      icon: "bg-blue-500/20 text-blue-300",
-      shadow: "hover:shadow-blue-500/20"
+      bg: "bg-white",
+      border: "border-[#f0f0f0]",
+      hover: "hover:bg-[#f5f5f5] hover:border-[#e5e5e5]",
+      icon: "bg-blue-50 text-blue-500",
+      shadow: "hover:shadow-sm"
     },
     green: {
-      bg: "from-green-500/15 to-green-600/15",
-      border: "border-green-500/20",
-      hover: "hover:from-green-500/25 hover:to-green-600/25 hover:border-green-400/30",
-      icon: "bg-green-500/20 text-green-300",
-      shadow: "hover:shadow-green-500/20"
+      bg: "bg-white",
+      border: "border-[#f0f0f0]",
+      hover: "hover:bg-[#f5f5f5] hover:border-[#e5e5e5]",
+      icon: "bg-green-50 text-green-500",
+      shadow: "hover:shadow-sm"
     },
     purple: {
-      bg: "from-purple-500/15 to-purple-600/15",
-      border: "border-purple-500/20",
-      hover: "hover:from-purple-500/25 hover:to-purple-600/25 hover:border-purple-400/30",
-      icon: "bg-purple-500/20 text-purple-300",
-      shadow: "hover:shadow-purple-500/20"
+      bg: "bg-white",
+      border: "border-[#f0f0f0]",
+      hover: "hover:bg-[#f5f5f5] hover:border-[#e5e5e5]",
+      icon: "bg-purple-50 text-purple-500",
+      shadow: "hover:shadow-sm"
     },
     orange: {
-      bg: "from-orange-500/15 to-orange-600/15",
-      border: "border-orange-500/20",
-      hover: "hover:from-orange-500/25 hover:to-orange-600/25 hover:border-orange-400/30",
-      icon: "bg-orange-500/20 text-orange-300",
-      shadow: "hover:shadow-orange-500/20"
+      bg: "bg-white",
+      border: "border-[#f0f0f0]",
+      hover: "hover:bg-[#f5f5f5] hover:border-[#e5e5e5]",
+      icon: "bg-orange-50 text-orange-500",
+      shadow: "hover:shadow-sm"
     }
   };
 
@@ -54,31 +54,35 @@ export const QuickActionCard: React.FC<QuickActionCardProps> = ({
     <motion.button
       onClick={onClick}
       className={`
-        group w-full p-5 
-        bg-gradient-to-br ${currentColor.bg} 
-        border ${currentColor.border} 
-        ${currentColor.hover}
-        rounded-xl text-left 
+        group w-full 
+        p-2 sm:p-5 
+        bg-transparent sm:bg-white 
+        border border-transparent sm:border-[#f0f0f0]
+        hover:bg-[#f9f9f9] sm:hover:bg-[#f5f5f5] sm:hover:border-[#e5e5e5]
+        rounded-[24px] sm:rounded-xl 
         transition-all duration-300 ease-out
-        hover:shadow-lg ${currentColor.shadow}
-        backdrop-blur-sm
+        sm:hover:shadow-sm
       `}
       whileHover={{ scale: 1.02, y: -2 }}
       whileTap={{ scale: 0.98 }}
     >
-      <div className="flex items-center space-x-4">
+      <div className="flex flex-col items-center justify-center sm:flex-row sm:items-center sm:space-x-4">
         <div className={`
-          p-3 rounded-lg ${currentColor.icon}
+          flex items-center justify-center
+          w-14 h-14 sm:w-auto sm:h-auto sm:p-3 
+          rounded-full sm:rounded-lg 
+          ${currentColor.icon}
           transition-all duration-300
           group-hover:scale-110
+          mb-2 sm:mb-0
         `}>
-          <Icon className="h-5 w-5" />
+          <Icon className="h-6 w-6 sm:h-5 sm:w-5" />
         </div>
-        <div className="flex-1">
-          <h3 className="text-white font-semibold text-base mb-1 group-hover:text-white transition-colors">
-            {title}
+        <div className="flex-1 text-center sm:text-left">
+          <h3 className="text-[#080808] font-medium text-[11px] leading-tight sm:text-base sm:font-semibold sm:mb-1 transition-colors">
+            {title === "Nuova Transazione" ? "Transazione" : title}
           </h3>
-          <p className="text-white/60 text-sm group-hover:text-white/80 transition-colors">
+          <p className="hidden sm:block text-[#080808]/60 text-sm transition-colors">
             {description}
           </p>
         </div>

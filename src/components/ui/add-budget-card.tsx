@@ -69,7 +69,7 @@ export const AddBudgetCard: React.FC<AddBudgetCardProps> = ({
     <>
       
       <motion.div
-        className="bg-gradient-to-br from-white/5 via-white/2 to-transparent backdrop-blur-sm border-2 border-white/20 rounded-xl p-4 transition-all duration-300 hover:border-white/40 min-h-[200px] flex flex-col"
+        className="bg-gradient-to-br from-white/5 via-white/2 to-transparent backdrop-blur-sm border-2 border-white/20 rounded-[32px] p-6 lg:p-8 transition-all duration-300 hover:border-white/40 min-h-[200px] flex flex-col"
         whileHover={{ y: -2, scale: 1.02 }}
       >
         <div className="text-center py-8 flex-1 flex flex-col justify-center">

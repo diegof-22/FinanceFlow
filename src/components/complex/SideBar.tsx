@@ -13,7 +13,8 @@ import {
   Menu,
   X,
   ArrowLeftToLine,
-  ArrowRightFromLine
+  ArrowRightFromLine,
+  Wallet
 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { useState } from 'react';
@@ -61,7 +62,7 @@ export function Sidebar() {
       <div className="lg:hidden fixed top-4 left-4 z-50">
         <Button
           onClick={toggleMobileMenu}
-          className="bg-white/10 border border-white/20 text-white hover:bg-white/20 hover:scale-105 active:scale-95 px-2 py-2 shadow-lg hover:shadow-xl transition-all duration-200"
+          className="bg-[#f0f0f0] border border-[#e5e5e5] text-[#080808] hover:bg-[#e5e5e5] hover:scale-105 active:scale-95 px-2 py-2 shadow-lg hover:shadow-xl transition-all duration-200"
         >
           {isMobileMenuOpen ? (
             <X className="h-5 w-5" />
@@ -82,7 +83,7 @@ export function Sidebar() {
       
       <div
         className={`
-        h-screen bg-white/5 backdrop-blur-2xl border-r border-white/10 flex-shrink-0
+        h-screen bg-[#f5f5f5] backdrop-blur-2xl border-r border-[#f0f0f0] flex-shrink-0
         transition-all duration-300 ease-in-out overflow-x-hidden
         fixed top-0 left-0 z-40 lg:relative lg:z-auto
         transform ${
@@ -105,17 +106,16 @@ export function Sidebar() {
               {...sidebarAnimations.logoContainer(isCollapsed)}
             >
               <motion.div
-                className={`w-10 h-10 bg-gradient-to-tr from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center ${
+                className={`bg-[#080808] p-1.5 rounded-xl shadow-lg flex items-center justify-center ${
                   isCollapsed ? "" : "mr-3"
                 }`}
-                {...sidebarPresets.animatedLogo.icon}
               >
-                <span className="text-white font-bold text-xl">F</span>
+                <Wallet className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
               </motion.div>
               <AnimatePresence>
                 {!isCollapsed && (
                   <motion.span
-                    className="text-white font-bold text-lg tracking-tight"
+                    className="text-[#080808] font-bold text-lg tracking-tight"
                     {...sidebarAnimations.logoText}
                   >
                     FinanceFlow
@@ -131,7 +131,7 @@ export function Sidebar() {
             <div className="hidden lg:block">
               <motion.button
                 onClick={toggleCollapse}
-                className={`relative flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 group text-white/70 hover:text-white hover:bg-white/10 w-full `}
+                className={`relative flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 group text-[#080808]/70 hover:text-[#080808] hover:bg-[#f0f0f0] w-full `}
                 {...toggleAnimations.toggleButton}
               >
                 <motion.div
@@ -156,10 +156,9 @@ export function Sidebar() {
                 {isCollapsed && (
                   <AnimatePresence>
                     <motion.div
-                      className="absolute left-full ml-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50"
                       {...navigationAnimations.navTooltip}
                     >
-                      {isCollapsed ? "Expand" : "Collapse"}
+                      {isCollapsed ? "Espandi" : "Riduci"}
                     </motion.div>
                   </AnimatePresence>
                 )}
@@ -184,8 +183,8 @@ export function Sidebar() {
                     onClick={() => setIsMobileMenuOpen(false)}
                     className={`relative flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 group ${
                       isActive
-                        ? "text-white z-10"
-                        : "text-white/70 hover:text-white hover:bg-white/10"
+                        ? "text-[#080808] bg-[#f0f0f0] font-semibold z-10"
+                        : "text-[#080808]/70 hover:text-[#080808] hover:bg-[#f0f0f0]"
                     } `}
                     title={isCollapsed ? item.name : ""}
                   >
@@ -208,11 +207,9 @@ export function Sidebar() {
                       )}
                     </motion.div>
 
-                   
                     {isCollapsed && (
                       <AnimatePresence>
                         <motion.div
-                          className="absolute left-full ml-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50"
                           {...navigationAnimations.navTooltip}
                         >
                           {item.name}
@@ -227,18 +224,18 @@ export function Sidebar() {
 
           
           <motion.div
-            className="p-6 border-t border-white/10 flex-shrink-0 mt-auto overflow-hidden"
+            className="p-4 md:p-6 pb-24 lg:pb-6 border-t border-[#f0f0f0] flex-shrink-0 mt-auto overflow-hidden"
             {...sidebarAnimations.userSection(isCollapsed)}
           >
             <AnimatePresence mode="wait">
               {!isCollapsed ? (
                 <motion.div key="expanded" {...userAnimations.userExpanded}>
                   <motion.div
-                    className="flex items-center mb-6 min-w-0"
+                    className="flex items-center mb-4 min-w-0 bg-white p-2 rounded-2xl shadow-sm border border-gray-100"
                     {...userAnimations.userInfo}
                   >
                     <motion.div
-                      className="w-12 h-12 bg-gradient-to-tr from-blue-500 to-blue-600 rounded-full flex items-center justify-center mr-4 flex-shrink-0"
+                      className="w-10 h-10 bg-[#e5e5e5] rounded-full flex items-center justify-center mr-3 flex-shrink-0"
                       {...userAnimations.userAvatar}
                     >
                       {user?.avatar ? (
@@ -248,16 +245,16 @@ export function Sidebar() {
                           className="w-full h-full rounded-full object-cover"
                         />
                       ) : (
-                        <span className="text-white font-medium text-lg">
+                        <span className="text-[#080808] font-bold text-sm">
                           {user?.name?.charAt(0)?.toUpperCase() || "U"}
                         </span>
                       )}
                     </motion.div>
                     <div className="flex-1 min-w-0 overflow-hidden">
-                      <p className="text-white font-medium text-base truncate">
+                      <p className="text-[#080808] font-bold text-sm truncate">
                         {user?.name || "User"}
                       </p>
-                      <p className="text-white/60 text-sm truncate">
+                      <p className="text-[#080808]/50 text-[11px] font-medium truncate">
                         {user?.email}
                       </p>
                     </div>
@@ -265,9 +262,9 @@ export function Sidebar() {
 
                   <motion.button
                     onClick={handleLogout}
-                    {...logoutAnimations.logoutExpanded}
+                    className="w-full flex items-center justify-center px-4 py-2.5 text-sm font-bold text-red-600 bg-red-50 rounded-xl hover:bg-red-100 transition-colors active:scale-95 border border-red-100"
                   >
-                    <LogOut className="mr-3 h-5 w-5" />
+                    <LogOut className="mr-2 h-4 w-4" />
                     Logout
                   </motion.button>
                 </motion.div>
@@ -278,7 +275,7 @@ export function Sidebar() {
                   {...userAnimations.userCollapsed}
                 >
                   <motion.div
-                    className="w-10 h-10 bg-gradient-to-tr from-blue-500 to-blue-600 rounded-full flex items-center justify-center group relative"
+                    className="w-10 h-10 bg-[#e5e5e5] rounded-full flex items-center justify-center group relative"
                     {...userAnimations.userAvatar}
                   >
                     {user?.avatar ? (
@@ -288,7 +285,7 @@ export function Sidebar() {
                         className="w-full h-full rounded-full object-cover"
                       />
                     ) : (
-                      <span className="text-white font-medium text-sm">
+                      <span className="text-[#080808] font-semibold text-sm">
                         {user?.name?.charAt(0)?.toUpperCase() || "U"}
                       </span>
                     )}

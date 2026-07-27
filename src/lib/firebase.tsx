@@ -1,20 +1,20 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { initializeApp } from 'firebase/app';
 
-import { 
-  getAuth, 
-  GoogleAuthProvider, 
+import {
+  getAuth,
+  GoogleAuthProvider,
   GithubAuthProvider,
-  signInWithEmailAndPassword, 
-  createUserWithEmailAndPassword, 
-  signInWithPopup, 
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  signInWithPopup,
   signOut,
   onAuthStateChanged,
   fetchSignInMethodsForEmail,
   User as FirebaseUser,
   sendPasswordResetEmail
 } from 'firebase/auth';
-import { 
+import {
   getFirestore
 } from 'firebase/firestore';
 
@@ -80,7 +80,7 @@ const checkEmailExists = async (email: string): Promise<boolean> => {
     return signInMethods.length > 0;
   } catch (error: any) {
     console.error('Error checking email:', error);
-  
+
     return false;
   }
 };
@@ -136,7 +136,6 @@ interface AuthProviderProps {
 export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [pushNotificationsInitialized, setPushNotificationsInitialized] = useState(false);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser: FirebaseUser | null) => {
@@ -149,26 +148,24 @@ export function AuthProvider({ children }: AuthProviderProps) {
           firebaseUser
         };
         setUser(userData);
-        
+
         const { firebaseUser: _, ...serializableUser } = userData;
         localStorage.setItem('user', JSON.stringify(serializableUser));
       } else {
         setUser(null);
-        setPushNotificationsInitialized(false);
         localStorage.removeItem('user');
-        console.log('🧹 Push notifications cleanup completato');
       }
       setIsLoading(false);
     });
 
     return () => unsubscribe();
-  }, [pushNotificationsInitialized]);
+  }, []);
 
-  
+
   const login = async (email: string, password: string): Promise<void> => {
     setIsLoading(true);
     try {
-      
+
       if (!email || !password) {
         throw { code: 'auth/invalid-input', message: 'Email e password sono obbligatori' };
       }
@@ -188,7 +185,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       const { firebaseUser: _, ...serializableUser } = userData;
       localStorage.setItem('user', JSON.stringify(serializableUser));
     } catch (error: any) {
-      
+
       const code = error.code || 'auth/unknown';
       const message = getFirebaseErrorMessage(code) || error.message || 'Errore sconosciuto';
       throw { code, message };
@@ -211,7 +208,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         firebaseUser
       };
       setUser(userData);
-      
+
       const { firebaseUser: _, ...serializableUser } = userData;
       localStorage.setItem('user', JSON.stringify(serializableUser));
     } catch (error: any) {
@@ -227,11 +224,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const loginWithGoogle = async (): Promise<void> => {
     setIsLoading(true);
-    
+
     try {
       const result = await signInWithPopup(auth, googleProvider);
       const firebaseUser = result.user;
-      
+
       const userData: User = {
         id: firebaseUser.uid,
         email: firebaseUser.email || '',
@@ -239,14 +236,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
         avatar: firebaseUser.photoURL || undefined,
         firebaseUser
       };
-      
+
       setUser(userData);
-      
+
       const { firebaseUser: _, ...serializableUser } = userData;
       localStorage.setItem('user', JSON.stringify(serializableUser));
-      
+
     } catch (error: any) {
-      
+
       throw new Error(getFirebaseErrorMessage(error.code) || 'Errore durante l\'accesso con Google');
     } finally {
       setIsLoading(false);
@@ -255,11 +252,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const loginWithGithub = async (): Promise<void> => {
     setIsLoading(true);
-    
+
     try {
       const result = await signInWithPopup(auth, githubProvider);
       const firebaseUser = result.user;
-      
+
       const userData: User = {
         id: firebaseUser.uid,
         email: firebaseUser.email || '',
@@ -267,9 +264,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
         avatar: firebaseUser.photoURL || undefined,
         firebaseUser
       };
-      
+
       setUser(userData);
-      
+
       const { firebaseUser: _, ...serializableUser } = userData;
       localStorage.setItem('user', JSON.stringify(serializableUser));
       console.log('Login GitHub completato per:', userData.email);
@@ -283,7 +280,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const logout = async (): Promise<void> => {
     setIsLoading(true);
-    
+
     try {
       await signOut(auth);
       setUser(null);
@@ -302,7 +299,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
 
     try {
-      
+
       const profileUpdates: any = {};
       if (updates.name) profileUpdates.displayName = updates.name;
       if (updates.avatar) profileUpdates.photoURL = updates.avatar;
@@ -312,7 +309,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         await firebaseUpdateProfile(auth.currentUser, profileUpdates);
       }
 
-      
+
       const updatedUser: User = {
         ...user,
         ...(updates.name && { name: updates.name }),
@@ -320,10 +317,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
       };
 
       setUser(updatedUser);
-      
+
       const { firebaseUser: _, ...serializableUser } = updatedUser;
       localStorage.setItem('user', JSON.stringify(serializableUser));
-      
+
       console.log('Profilo aggiornato con successo');
     } catch (error: any) {
       console.error('Update profile error:', error);

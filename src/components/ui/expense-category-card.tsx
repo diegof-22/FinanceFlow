@@ -80,7 +80,7 @@ export const ExpenseCategoryCard: React.FC<ExpenseCategoryCardProps> = ({
 
   return (
     <motion.div
-      className={`bg-gradient-to-br ${colorClasses.bg} rounded-xl p-4 border ${colorClasses.border} backdrop-blur-sm cursor-pointer transition-all duration-300 hover:scale-[1.02]`}
+      className={`bg-gradient-to-br ${colorClasses.bg} rounded-[32px] p-6 border ${colorClasses.border} backdrop-blur-sm cursor-pointer transition-all duration-300 hover:scale-[1.02]`}
       whileHover={{ y: -2 }}
       onClick={onClick}
     >

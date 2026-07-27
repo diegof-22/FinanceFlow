@@ -51,23 +51,6 @@ export type AccountInput = Omit<Account, 'id' | 'createdAt' | 'updatedAt'>;
 export type TransactionInput = Omit<Transaction, 'id' | 'createdAt' | 'updatedAt'>;
 export type BudgetInput = Omit<Budget, 'id' | 'createdAt' | 'updatedAt'>;
 
-export interface OfflineCard extends Omit<Card, 'createdAt' | 'updatedAt'> {
-  createdAt: Date;
-  updatedAt: Date;
-  isOffline?: boolean;
-}
-
-export interface OfflineAccount extends Omit<Account, 'createdAt' | 'updatedAt'> {
-  createdAt: Date;
-  updatedAt: Date;
-  isOffline?: boolean;
-}
-
-export interface OfflineTransaction extends Omit<Transaction, 'createdAt' | 'updatedAt'> {
-  createdAt: Date;
-  updatedAt: Date;
-  isOffline?: boolean;
-}
 
 
 export interface CardData {
@@ -100,7 +83,6 @@ export interface BudgetData {
   [category: string]: number;
 }
 
-//Non usato
 
 export const convertCardData = (cardData: CardData): CardInput => ({
   cardName: cardData.cardName,

@@ -3,7 +3,7 @@ import { Modal } from '../ui/modal';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
-import { CreditCard, DollarSign, ChevronDown } from 'lucide-react';
+import { CreditCard, ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from "framer-motion";
 import { NumberInput } from '../ui/number-input';
 import { Card } from '@/types/finance';
@@ -52,12 +52,12 @@ export const AddCardModal: React.FC<AddCardModalProps> = ({
   };
 
   const colorOptions = [
-    { value: 'blue', label: 'Blu', class: 'bg-blue-500', gradient: 'from-blue-600/20 to-blue-800/20', text: 'text-blue-300' },
-    { value: 'green', label: 'Verde', class: 'bg-green-500', gradient: 'from-green-600/20 to-green-800/20', text: 'text-green-300' },
-    { value: 'purple', label: 'Viola', class: 'bg-purple-500', gradient: 'from-purple-600/20 to-purple-800/20', text: 'text-purple-300' },
-    { value: 'red', label: 'Rosso', class: 'bg-red-500', gradient: 'from-red-600/20 to-red-800/20', text: 'text-red-300' },
-    { value: 'orange', label: 'Arancione', class: 'bg-orange-500', gradient: 'from-orange-600/20 to-orange-800/20', text: 'text-orange-300' },
-    { value: 'pink', label: 'Rosa', class: 'bg-pink-500', gradient: 'from-pink-600/20 to-pink-800/20', text: 'text-pink-300' }
+    { value: 'blue', label: 'Blu', class: 'bg-blue-500', gradient: 'from-blue-500 to-blue-600', text: 'text-white' },
+    { value: 'green', label: 'Verde', class: 'bg-emerald-500', gradient: 'from-emerald-500 to-emerald-600', text: 'text-white' },
+    { value: 'purple', label: 'Viola', class: 'bg-purple-500', gradient: 'from-purple-500 to-purple-600', text: 'text-white' },
+    { value: 'red', label: 'Rosso', class: 'bg-rose-500', gradient: 'from-rose-500 to-rose-600', text: 'text-white' },
+    { value: 'orange', label: 'Arancione', class: 'bg-orange-500', gradient: 'from-orange-500 to-orange-600', text: 'text-white' },
+    { value: 'zinc', label: 'Grigio', class: 'bg-zinc-800', gradient: 'from-zinc-800 to-zinc-900', text: 'text-white' }
   ];
 
   const selectedColor = colorOptions.find(color => color.value === formData.color) || colorOptions[0];
@@ -81,32 +81,30 @@ export const AddCardModal: React.FC<AddCardModalProps> = ({
   }, [initialData, isOpen]);
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Aggiungi Carta" size="sm">
-      <form onSubmit={handleSubmit} className="space-y-3">
+    <Modal isOpen={isOpen} onClose={onClose} title={initialData ? "Modifica Carta" : "Aggiungi Carta"} size="sm">
+      <form onSubmit={handleSubmit} className="space-y-4">
         
-        <div className={`bg-gradient-to-br ${selectedColor.gradient} rounded-lg p-3 border border-white/20 backdrop-blur-sm`}>
-          <div className="flex items-center justify-between mb-2">
-            <CreditCard className={`h-5 w-5 ${selectedColor.text}`} />
-            <span className={`text-xs font-bold tracking-wider ${selectedColor.text}`}>
+        <div className={`bg-gradient-to-br ${selectedColor.gradient} rounded-[24px] p-5 shadow-sm transition-all duration-300`}>
+          <div className="flex items-center justify-between mb-4">
+            <CreditCard className={`h-6 w-6 ${selectedColor.text}`} />
+            <span className={`text-xs font-bold tracking-wider px-3 py-1 rounded-full bg-white/20 ${selectedColor.text}`}>
               {formData.cardType === 'credit' ? 'CREDITO' : 'DEBITO'}
             </span>
           </div>
           <div className="space-y-1">
-            <p className="text-white font-semibold text-sm">
+            <p className={`${selectedColor.text} font-bold text-lg`}>
               {formData.cardName || 'Nome Carta'}
             </p>
-            <p className="text-lg font-bold text-white">
+            <p className={`text-3xl font-bold tracking-tight ${selectedColor.text} mt-2`}>
               €{formData.balance || '0.00'}
             </p>
           </div>
         </div>
 
-        
-        <div className="space-y-3">
-          
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="cardName" className="text-white/90 mb-1 block text-sm font-medium">
+              <Label htmlFor="cardName" className="text-[#080808] mb-1.5 block text-xs font-bold">
                 Nome Carta
               </Label>
               <Input
@@ -115,13 +113,13 @@ export const AddCardModal: React.FC<AddCardModalProps> = ({
                 placeholder="Visa Gold"
                 value={formData.cardName}
                 onChange={(e) => setFormData({ ...formData, cardName: e.target.value })}
-                className="bg-white/10 border-white/20 text-white placeholder:text-white/40 rounded-lg h-9 text-sm py-0"
+                className="bg-[#f9f9f9] border border-[#e5e5e5] text-[#080808] placeholder:text-[#080808]/40 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#080808]/20 focus:ring-2 focus:ring-[#080808]/5 shadow-sm"
                 required
               />
             </div>
             <div>
-              <Label htmlFor="balance" className="text-white/90 mb-1 block text-sm font-medium">
-                Saldo
+              <Label htmlFor="balance" className="text-[#080808] mb-1.5 block text-xs font-bold">
+                Saldo Attuale
               </Label>
               <NumberInput
                 value={formData.balance}
@@ -130,80 +128,82 @@ export const AddCardModal: React.FC<AddCardModalProps> = ({
                 prefix="€"
                 increment={50}
                 min={0}
-                className="h-9"
+                className="shadow-sm"
               />
             </div>
           </div>
 
-          
           <div>
-            <Label className="text-white/90 mb-1 block text-sm font-medium">Tipo</Label>
+            <Label className="text-[#080808] mb-1.5 block text-xs font-bold">Tipo</Label>
             <div className="relative">
-              <motion.button
+              <button
                 type="button"
                 onClick={() => setIsCardTypeDropdownOpen(!isCardTypeDropdownOpen)}
-                className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white text-sm focus:outline-none focus:border-white/40 flex items-center justify-between h-9"
-                whileTap={{ scale: 0.98 }}
+                className="w-full px-4 py-2.5 bg-[#f9f9f9] border border-[#e5e5e5] rounded-xl text-[#080808] text-sm focus:outline-none focus:border-[#080808]/20 flex items-center justify-between shadow-sm transition-all"
               >
                 <div className="flex items-center space-x-2">
-                  <CreditCard className={`h-4 w-4 ${formData.cardType === 'credit' ? 'text-green-400' : 'text-blue-400'}`} />
-                  <span>{formData.cardType === 'credit' ? 'Carta di Credito' : 'Carta di Debito'}</span>
+                  <CreditCard className={`h-4 w-4 ${formData.cardType === 'credit' ? 'text-emerald-500' : 'text-blue-500'}`} />
+                  <span className="font-medium">{formData.cardType === 'credit' ? 'Carta di Credito' : 'Carta di Debito'}</span>
                 </div>
-                <ChevronDown className={`h-4 w-4 text-white/50 transition-transform ${isCardTypeDropdownOpen ? 'rotate-180' : ''}`} />
-              </motion.button>
+                <ChevronDown className={`h-4 w-4 text-[#080808]/50 transition-transform ${isCardTypeDropdownOpen ? 'rotate-180' : ''}`} />
+              </button>
 
               <AnimatePresence>
                 {isCardTypeDropdownOpen && (
                   <motion.div
-                    initial={{ opacity: 0, y: -10 }}
+                    initial={{ opacity: 0, y: -5 }}
                     animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    className="absolute top-full left-0 right-0 mt-1 bg-gray-800/95 backdrop-blur-xl border border-white/20 rounded-lg shadow-xl z-50 overflow-hidden"
+                    exit={{ opacity: 0, y: -5 }}
+                    transition={{ duration: 0.15 }}
+                    className="absolute top-full left-0 right-0 mt-2 bg-white border border-[#f0f0f0] rounded-[20px] shadow-xl z-50 overflow-hidden"
                   >
-                    <motion.button
-                      type="button"
-                      onClick={() => {
-                        setFormData({ ...formData, cardType: 'credit' });
-                        setIsCardTypeDropdownOpen(false);
-                      }}
-                      className="w-full px-3 py-2 text-left hover:bg-white/10 transition-colors flex items-center space-x-2"
-                      whileHover={{ backgroundColor: 'rgba(255,255,255,0.1)' }}
-                    >
-                      <CreditCard className="h-4 w-4 text-green-400" />
-                      <span className="text-white text-sm">Carta di Credito</span>
-                    </motion.button>
-                    <motion.button
-                      type="button"
-                      onClick={() => {
-                        setFormData({ ...formData, cardType: 'debit' });
-                        setIsCardTypeDropdownOpen(false);
-                      }}
-                      className="w-full px-3 py-2 text-left hover:bg-white/10 transition-colors flex items-center space-x-2"
-                      whileHover={{ backgroundColor: 'rgba(255,255,255,0.1)' }}
-                    >
-                      <CreditCard className="h-4 w-4 text-blue-400" />
-                      <span className="text-white text-sm">Carta di Debito</span>
-                    </motion.button>
+                    <div className="p-2 space-y-1">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setFormData({ ...formData, cardType: 'credit' });
+                          setIsCardTypeDropdownOpen(false);
+                        }}
+                        className={`w-full px-4 py-2.5 text-left rounded-xl transition-colors flex items-center space-x-3 ${formData.cardType === 'credit' ? 'bg-[#f5f5f5]' : 'hover:bg-[#f9f9f9]'}`}
+                      >
+                        <div className={`p-1.5 rounded-lg bg-white shadow-sm border border-[#f0f0f0]`}>
+                          <CreditCard className="h-4 w-4 text-emerald-500" />
+                        </div>
+                        <span className="text-[#080808] text-sm font-medium">Carta di Credito</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setFormData({ ...formData, cardType: 'debit' });
+                          setIsCardTypeDropdownOpen(false);
+                        }}
+                        className={`w-full px-4 py-2.5 text-left rounded-xl transition-colors flex items-center space-x-3 ${formData.cardType === 'debit' ? 'bg-[#f5f5f5]' : 'hover:bg-[#f9f9f9]'}`}
+                      >
+                        <div className={`p-1.5 rounded-lg bg-white shadow-sm border border-[#f0f0f0]`}>
+                          <CreditCard className="h-4 w-4 text-blue-500" />
+                        </div>
+                        <span className="text-[#080808] text-sm font-medium">Carta di Debito</span>
+                      </button>
+                    </div>
                   </motion.div>
                 )}
               </AnimatePresence>
             </div>
           </div>
 
-        
           <div>
-            <Label className="text-white/90 mb-1.5 block text-sm font-medium">Colore</Label>
-            <div className="flex justify-center space-x-2">
+            <Label className="text-[#080808] mb-2 block text-xs font-bold">Colore Tema</Label>
+            <div className="flex flex-wrap gap-3">
               {colorOptions.map((color) => (
                 <motion.button
                   key={color.value}
                   type="button"
                   onClick={() => setFormData({ ...formData, color: color.value })}
-                  className={`w-7 h-7 rounded-full ${color.class} border-2 ${
-                    formData.color === color.value ? 'border-white scale-110' : 'border-transparent'
+                  className={`w-10 h-10 rounded-full ${color.class} ${
+                    formData.color === color.value ? 'ring-2 ring-offset-2 ring-[#080808] scale-110 shadow-md' : 'border border-black/5 opacity-80 hover:opacity-100'
                   } transition-all`}
-                  whileHover={{ scale: 1.15 }}
-                  whileTap={{ scale: 0.9 }}
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.95 }}
                   title={color.label}
                 />
               ))}
@@ -211,24 +211,20 @@ export const AddCardModal: React.FC<AddCardModalProps> = ({
           </div>
         </div>
 
-        
-        <div className="flex space-x-3 pt-1">
+        <div className="flex space-x-3 pt-4">
           <Button
             type="button"
             onClick={onClose}
-            variant="secondary"
-            size="md"
-            className="flex-1 h-9"
+            variant="ghost"
+            className="flex-1 h-11 rounded-full text-[#080808] border border-[#e5e5e5] hover:bg-[#f5f5f5]"
           >
             Annulla
           </Button>
           <Button
             type="submit"
-            variant="primary"
-            size="md"
-            className="flex-1 h-9"
+            className="flex-1 h-11 rounded-full bg-[#080808] text-white font-bold hover:bg-[#080808]/80 hover:scale-[1.02] active:scale-95 transition-all"
           >
-            Aggiungi
+            {initialData ? "Salva Modifiche" : "Aggiungi"}
           </Button>
         </div>
       </form>

@@ -3,6 +3,7 @@ const router = express.Router();
 
 const admin = require('firebase-admin');
 const db = admin.firestore();
+const { getCache, setCache, invalidateCache } = require('../services/cacheService');
 
 
 async function accountExists(userEmail, accountName) {
@@ -25,10 +26,18 @@ router.get('/', async (req, res) => {
       return res.status(400).json({ error: 'User email is required' });
     }
 
+    const cacheKey = `cache:accounts:${userEmail}`;
+    const cachedData = await getCache(cacheKey);
+    if (cachedData) {
+      return res.json(cachedData);
+    }
+
     console.log(`GET /api/accounts - Fetching accounts for user: ${userEmail}`);
     const snapshot = await db.collection('users').doc(userEmail).collection('accounts').get();
     const accounts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     console.log(`Found ${accounts.length} accounts for user ${userEmail}`);
+    
+    await setCache(cacheKey, accounts);
     res.json(accounts);
   } catch (e) {
     console.error('Error in GET /api/accounts:', e);
@@ -65,6 +74,8 @@ router.post('/', async (req, res) => {
     
     const docRef = await db.collection('users').doc(userEmail).collection('accounts').add(accountData);
     const doc = await docRef.get();
+    
+    await invalidateCache(`cache:accounts:${userEmail}`);
     
     console.log('Account created successfully:', doc.id);
     res.status(201).json({ id: doc.id, ...doc.data() });
@@ -106,6 +117,8 @@ router.patch('/:id', async (req, res) => {
     await docRef.update(updateData);
     const updatedDoc = await docRef.get();
     
+    await invalidateCache(`cache:accounts:${userEmail}`);
+    
     console.log('Account updated successfully:', req.params.id);
     res.json({ id: updatedDoc.id, ...updatedDoc.data() });
   } catch (e) {
@@ -133,6 +146,9 @@ router.delete('/:id', async (req, res) => {
     }
     
     await docRef.delete();
+    
+    await invalidateCache(`cache:accounts:${userEmail}`);
+    
     console.log('Account deleted successfully:', req.params.id);
     res.status(204).end();
   } catch (e) {

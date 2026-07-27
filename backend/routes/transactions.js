@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const admin = require('firebase-admin');
 const db = admin.firestore();
+const { getCache, setCache, invalidateCache } = require('../services/cacheService');
 
 async function transactionExists(userEmail, timestamp) {
   try {
@@ -22,10 +23,18 @@ router.get('/', async (req, res) => {
       return res.status(400).json({ error: 'User email is required' });
     }
 
+    const cacheKey = `cache:transactions:${userEmail}`;
+    const cachedData = await getCache(cacheKey);
+    if (cachedData) {
+      return res.json(cachedData);
+    }
+
     console.log(`GET /api/transactions - Fetching transactions for user: ${userEmail}`);
     const snapshot = await db.collection('users').doc(userEmail).collection('transactions').get();
     const transactions = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     console.log(`Found ${transactions.length} transactions for user ${userEmail}`);
+    
+    await setCache(cacheKey, transactions);
     res.json(transactions);
   } catch (e) {
     console.error('Error in GET /api/transactions:', e);
@@ -64,6 +73,8 @@ router.post('/', async (req, res) => {
     const docRef = await db.collection('users').doc(userEmail).collection('transactions').add(transactionData);
     const doc = await docRef.get();
     
+    await invalidateCache(`cache:transactions:${userEmail}`);
+    
     console.log('Transaction created successfully:', doc.id);
     res.status(201).json({ id: doc.id, ...doc.data() });
   } catch (e) {
@@ -101,6 +112,8 @@ router.patch('/:id', async (req, res) => {
     await docRef.update(updateData);
     const updatedDoc = await docRef.get();
     
+    await invalidateCache(`cache:transactions:${userEmail}`);
+    
     console.log('Transaction updated successfully:', req.params.id);
     res.json({ id: updatedDoc.id, ...updatedDoc.data() });
   } catch (e) {
@@ -127,6 +140,9 @@ router.delete('/:id', async (req, res) => {
     }
     
     await docRef.delete();
+    
+    await invalidateCache(`cache:transactions:${userEmail}`);
+    
     console.log('Transaction deleted successfully:', req.params.id);
     res.status(204).end();
   } catch (e) {

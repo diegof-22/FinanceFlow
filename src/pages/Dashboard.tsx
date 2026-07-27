@@ -20,7 +20,6 @@ import { ExpenseCategoryCard } from "@/components/ui/expense-category-card";
 import { BudgetCategoryCard } from "@/components/ui/budget-category-card";
 import { FilterBar, FilterOption } from "@/components/ui/filter-bar";
 import { ConfirmModal } from "@/components/ui/confirm-modal";
-import { OfflineDataBanner } from "@/components/ui/offline-data-banner";
 
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
@@ -90,10 +89,6 @@ export const Dashboard = () => {
     removeBudget,
     getExpensesByCategory,
     isLoading,
-    isOffline,
-    lastSync,
-    hasOfflineData,
-    reloadOfflineData,
   } = useFinanceDataContext() || {};
   const [showBalance, setShowBalance] = useState(true);
   const [activeFilter, setActiveFilter] = useState("all");
@@ -113,8 +108,8 @@ export const Dashboard = () => {
     budgetAmount: 0
   });
   const [isSetBudgetModalOpen, setIsSetBudgetModalOpen] = useState(false);
+  const [showAllAccounts, setShowAllAccounts] = useState(false);
   
-  // Stato per il carosello delle stats card
   const [currentStatsIndex, setCurrentStatsIndex] = useState(0);
   const [showStatsNavigation, setShowStatsNavigation] = useState(false);
   const statsContainerRef = useRef<HTMLDivElement>(null);
@@ -123,7 +118,6 @@ export const Dashboard = () => {
     window.scrollTo(0, 0);
   }, []);
 
-  // Controlla se le stats card necessitano di navigazione
   useEffect(() => {
     const checkStatsContainer = () => {
       if (statsContainerRef.current) {
@@ -165,7 +159,7 @@ export const Dashboard = () => {
     handleDeleteCard,
     handleDeleteAccount,
     handleDeleteTransaction
-  } = createDashboardHandlers(
+  } = createDashboardHandlers({
     setIsAddAccountModalOpen,
     setIsAddCardModalOpen,
     setIsAddTransactionModalOpen,
@@ -180,9 +174,9 @@ export const Dashboard = () => {
     addTransaction,
     updateCard,
     updateAccount,
-    removeCard,
-    removeAccount,
-    removeTransaction,
+    deleteCard: removeCard,
+    deleteAccount: removeAccount,
+    deleteTransaction: removeTransaction,
     setBudgetForCategory,
     removeBudget,
     cards,
@@ -190,7 +184,7 @@ export const Dashboard = () => {
     transactions,
     budgets,
     confirmRemovalModal
-  );
+  });
 
   const totalBalance = getTotalBalance();
   const monthlyExpenses = getMonthlyExpenses();
@@ -198,6 +192,13 @@ export const Dashboard = () => {
 
   const filters = createFilters(cards, accounts);
   const { filteredCards, filteredAccounts } = getFilteredItems(cards, accounts, activeFilter);
+  
+  const combinedItems = [
+    ...filteredCards.map(c => ({ type: 'card' as const, data: c })),
+    ...filteredAccounts.map(a => ({ type: 'account' as const, data: a }))
+  ];
+  const displayItems = showAllAccounts ? combinedItems : combinedItems.slice(0, 6);
+  const hasMoreItems = combinedItems.length > 6;
 
   const totalAccounts = cards.length + accounts.length;
   const expenseTransactions = transactions.filter((t) => t.type === "expense");
@@ -236,41 +237,25 @@ export const Dashboard = () => {
     }
   };
 
-  // Funzioni per navigare le stats card
   const nextStats = () => {
-    if (statsContainerRef.current) {
+    if (!isLastStatsPage && statsContainerRef.current) {
       const containerWidth = statsContainerRef.current.offsetWidth;
-      const scrollPosition = statsContainerRef.current.scrollLeft;
-      const newPosition = scrollPosition + containerWidth * 0.8;
-      
-      statsContainerRef.current.scrollTo({
-        left: newPosition,
-        behavior: 'smooth'
-      });
-      
-      setCurrentStatsIndex(prev => Math.min(prev + 2, 3));
+      statsContainerRef.current.scrollBy({ left: containerWidth * 0.8, behavior: 'smooth' });
+      setCurrentStatsIndex(prev => Math.min(prev + 1, 1)); 
     }
   };
 
   const prevStats = () => {
-    if (statsContainerRef.current) {
+    if (!isFirstStatsPage && statsContainerRef.current) {
       const containerWidth = statsContainerRef.current.offsetWidth;
-      const scrollPosition = statsContainerRef.current.scrollLeft;
-      const newPosition = scrollPosition - containerWidth * 0.8;
-      
-      statsContainerRef.current.scrollTo({
-        left: newPosition,
-        behavior: 'smooth'
-      });
-      
-      setCurrentStatsIndex(prev => Math.max(prev - 2, 0));
+      statsContainerRef.current.scrollBy({ left: -containerWidth * 0.8, behavior: 'smooth' });
+      setCurrentStatsIndex(prev => Math.max(prev - 1, 0));
     }
   };
 
-  // Calcola gli indicatori di navigazione
   const statsIndicators = Array.from({ length: 2 }, (_, i) => i);
   const isFirstStatsPage = currentStatsIndex === 0;
-  const isLastStatsPage = currentStatsIndex >= 2;
+  const isLastStatsPage = currentStatsIndex >= 1;
 
   if (isLoading) {
     return <DashboardSkeleton />;
@@ -281,8 +266,8 @@ export const Dashboard = () => {
   }
 
   return (
-    <div className="p-6 lg:p-8">
-      <div className="max-w-7xl mx-auto space-y-8">
+    <div className="p-4 sm:p-6 lg:p-8 pb-20 md:pb-8 min-h-screen">
+      <div className="max-w-7xl mx-auto space-y-6 sm:space-y-8">
 
         <motion.div
           className="mb-8"
@@ -292,10 +277,10 @@ export const Dashboard = () => {
         >
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl lg:text-4xl font-bold text-white mb-2">
-                Benvenuto, {user?.name}! 
+              <h1 className="text-2xl sm:text-3xl font-medium text-[#080808] mb-1">
+                Benvenuto, <span className="font-semibold">{user?.name}</span>! 
               </h1>
-              <p className="text-white/70 text-lg">
+              <p className="text-[#080808]/70 text-sm sm:text-base">
                 Ecco una panoramica delle tue finanze di oggi
               </p>
             </div>
@@ -303,26 +288,20 @@ export const Dashboard = () => {
               
               <motion.button
                 onClick={() => setShowBalance(!showBalance)}
-                className="p-3 bg-white/10 hover:bg-white/20 rounded-xl transition-colors"
+                className="p-3 bg-[#f5f5f5] hover:bg-[#f0f0f0] rounded-xl transition-colors"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
                 {showBalance ? (
-                  <Eye className="h-5 w-5 text-white" />
+                  <Eye className="h-5 w-5 text-[#080808]" />
                 ) : (
-                  <EyeOff className="h-5 w-5 text-white" />
+                  <EyeOff className="h-5 w-5 text-[#080808]" />
                 )}
               </motion.button>
             </div>
           </div>
         </motion.div>
 
-        <OfflineDataBanner
-          isOffline={isOffline}
-          lastSync={lastSync}
-          hasOfflineData={hasOfflineData}
-          onRefresh={reloadOfflineData}
-        />
 
         <motion.div
           className="relative"
@@ -330,40 +309,37 @@ export const Dashboard = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.1 }}
         >
-          {/* Navigazione stats card */}
           {showStatsNavigation && (
-            <>
+            <div className="md:hidden">
               <button
                 onClick={prevStats}
                 disabled={isFirstStatsPage}
-                className={`absolute left-0 top-1/2 -translate-y-1/2 z-10 p-2 bg-white/20 backdrop-blur-sm rounded-full transition-opacity ${
-                  isFirstStatsPage ? 'opacity-30 cursor-not-allowed' : 'opacity-100 hover:bg-white/30'
+                className={`absolute left-0 top-1/2 -translate-y-1/2 z-10 p-2 bg-[#ffffff]/80 backdrop-blur-sm rounded-full transition-opacity shadow-sm ${
+                  isFirstStatsPage ? 'opacity-30 cursor-not-allowed' : 'opacity-100 hover:bg-[#f0f0f0]'
                 }`}
                 style={{ transform: 'translateY(-50%) translateX(-50%)' }}
               >
-                <ChevronLeft className="h-5 w-5 text-white" />
+                <ChevronLeft className="h-5 w-5 text-[#080808]" />
               </button>
               
               <button
                 onClick={nextStats}
                 disabled={isLastStatsPage}
-                className={`absolute right-0 top-1/2 -translate-y-1/2 z-10 p-2 bg-white/20 backdrop-blur-sm rounded-full transition-opacity ${
-                  isLastStatsPage ? 'opacity-30 cursor-not-allowed' : 'opacity-100 hover:bg-white/30'
+                className={`absolute right-0 top-1/2 -translate-y-1/2 z-10 p-2 bg-[#ffffff]/80 backdrop-blur-sm rounded-full transition-opacity shadow-sm ${
+                  isLastStatsPage ? 'opacity-30 cursor-not-allowed' : 'opacity-100 hover:bg-[#f0f0f0]'
                 }`}
                 style={{ transform: 'translateY(-50%) translateX(50%)' }}
               >
-                <ChevronRight className="h-5 w-5 text-white" />
+                <ChevronRight className="h-5 w-5 text-[#080808]" />
               </button>
-            </>
+            </div>
           )}
 
-          {/* Container scrollabile per stats card */}
           <div 
             ref={statsContainerRef}
-            className="flex overflow-x-auto snap-x snap-mandatory scrollbar-hide space-x-6 pb-4"
-            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+            className="flex overflow-x-auto hide-scroll snap-x snap-mandatory space-x-3 -mx-4 px-4 sm:-mx-6 sm:px-6 lg:mx-0 lg:px-0 md:grid md:grid-cols-2 lg:grid-cols-3 md:space-x-0 md:gap-6 pb-4 md:pb-0"
           >
-            <div className="flex-none w-full sm:w-auto snap-center">
+            <div className="min-w-[85vw] sm:min-w-[300px] md:min-w-0 flex-shrink-0 snap-center">
               <StatsCard
                 title="Saldo Totale"
                 value={showBalance ? `€${totalBalance.toFixed(2)}` : "€••••••"}
@@ -371,10 +347,10 @@ export const Dashboard = () => {
                 changeType="increase"
                 icon={Wallet}
                 color="blue"
-                className="min-w-[280px]"
+                className="w-full h-full"
               />
             </div>
-            <div className="flex-none w-full sm:w-auto snap-center">
+            <div className="min-w-[85vw] sm:min-w-[300px] md:min-w-0 flex-shrink-0 snap-center">
               <StatsCard
                 title="Spese Mensili"
                 value={showBalance ? `€${monthlyExpenses.toFixed(2)}` : "€••••••"}
@@ -382,10 +358,10 @@ export const Dashboard = () => {
                 changeType="decrease"
                 icon={TrendingDown}
                 color="red"
-                className="min-w-[280px]"
+                className="w-full h-full"
               />
             </div>
-            <div className="flex-none w-full sm:w-auto snap-center">
+            <div className="min-w-[85vw] sm:min-w-[300px] md:min-w-0 flex-shrink-0 snap-center">
               <StatsCard
                 title="Entrate Mensili"
                 value={showBalance ? `€${monthlyIncome.toFixed(2)}` : "€••••••"}
@@ -393,41 +369,29 @@ export const Dashboard = () => {
                 changeType="increase"
                 icon={PiggyBank}
                 color="green"
-                className="min-w-[280px]"
-              />
-            </div>
-            <div className="flex-none w-full sm:w-auto snap-center">
-              <StatsCard
-                title="Transazioni"
-                value={transactions.length.toString()}
-                change="Totali registrate"
-                changeType="increase"
-                icon={Target}
-                color="yellow"
-                className="min-w-[280px]"
+                className="w-full h-full"
               />
             </div>
           </div>
 
-          {/* Indicatori di navigazione */}
           {showStatsNavigation && (
-            <div className="flex justify-center space-x-2 mt-4">
+            <div className="flex md:hidden justify-center space-x-2 mt-4">
               {statsIndicators.map((index) => (
                 <button
                   key={index}
                   className={`h-2 rounded-full transition-all duration-300 ${
-                    index === Math.floor(currentStatsIndex / 2)
-                      ? 'w-6 bg-white'
-                      : 'w-2 bg-white/30'
+                    index === currentStatsIndex
+                      ? 'w-6 bg-[#080808]'
+                      : 'w-2 bg-[#080808]/30'
                   }`}
                   onClick={() => {
                     if (statsContainerRef.current) {
                       const containerWidth = statsContainerRef.current.offsetWidth;
                       statsContainerRef.current.scrollTo({
-                        left: index * containerWidth * 1.6,
+                        left: index * containerWidth * 0.8,
                         behavior: 'smooth'
                       });
-                      setCurrentStatsIndex(index * 2);
+                      setCurrentStatsIndex(index);
                     }
                   }}
                 />
@@ -442,8 +406,8 @@ export const Dashboard = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.2 }}
         >
-          <h2 className="text-2xl font-bold text-white mb-6">Azioni Rapide</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <h2 className="text-xl sm:text-2xl font-semibold text-[#080808] mb-6">Azioni Rapide</h2>
+          <div className="grid grid-cols-4 gap-2 sm:gap-6">
             <QuickActionCard
               title="Collega Conto"
               description="Aggiungi un nuovo conto bancario"
@@ -465,6 +429,13 @@ export const Dashboard = () => {
               onClick={handleAddTransaction}
               color="purple"
             />
+            <QuickActionCard
+              title="Nuovo Budget"
+              description="Imposta limiti di spesa"
+              icon={Target}
+              onClick={() => setIsSetBudgetModalOpen(true)}
+              color="orange"
+            />
           </div>
         </motion.div>
 
@@ -474,7 +445,7 @@ export const Dashboard = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.25 }}
           >
-            <h2 className="text-2xl font-bold text-white mb-6">
+            <h2 className="text-xl sm:text-2xl font-semibold text-[#080808] mb-6">
               I Tuoi Conti e Carte
             </h2>
 
@@ -484,28 +455,47 @@ export const Dashboard = () => {
               onFilterChange={setActiveFilter}
             />
 
-            {filteredCards.length > 0 || filteredAccounts.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredCards.map((card) => (
-                  <CardItem
-                    key={card.id}
-                    card={card}
-                    onDelete={handleDeleteCard}
-                    onEdit={handleEditCard}
-                  />
-                ))}
-                {filteredAccounts.map((account) => (
-                  <AccountItem
-                    key={account.id}
-                    account={account}
-                    onDelete={handleDeleteAccount}
-                    onEdit={handleEditAccount}
-                  />
-                ))}
-              </div>
+            <style>{`
+              .hide-scroll::-webkit-scrollbar { display: none; }
+              .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; }
+            `}</style>
+
+            {combinedItems.length > 0 ? (
+              <>
+                <div className="flex overflow-x-auto hide-scroll snap-x snap-mandatory space-x-3 -mx-4 px-4 sm:-mx-6 sm:px-6 lg:mx-0 lg:px-0 md:grid md:grid-cols-2 lg:grid-cols-3 md:space-x-0 md:gap-6 pb-4 md:pb-0">
+                  {displayItems.map((item) => (
+                    <div key={item.data.id} className="min-w-[85vw] sm:min-w-[300px] md:min-w-0 flex-shrink-0 snap-center">
+                      {item.type === 'card' ? (
+                        <CardItem
+                          card={item.data as Card}
+                          onDelete={handleDeleteCard}
+                          onEdit={handleEditCard}
+                        />
+                      ) : (
+                        <AccountItem
+                          account={item.data as Account}
+                          onDelete={handleDeleteAccount}
+                          onEdit={handleEditAccount}
+                        />
+                      )}
+                    </div>
+                  ))}
+                </div>
+                {hasMoreItems && (
+                  <div className="mt-6 flex justify-center">
+                    <Button 
+                      variant="outline" 
+                      onClick={() => setShowAllAccounts(!showAllAccounts)}
+                      className="text-[#080808]/70 border-[#e5e5e5] hover:bg-[#f5f5f5]"
+                    >
+                      {showAllAccounts ? 'Mostra Meno' : 'Mostra Tutte'}
+                    </Button>
+                  </div>
+                )}
+              </>
             ) : (
               <div className="text-center py-8">
-                <div className="text-white/40 mb-4">
+                <div className="text-[#080808]/40 mb-4">
                   <Wallet className="h-12 w-12 mx-auto mb-2" />
                   <p className="text-lg">Nessun elemento trovato</p>
                   <p className="text-sm">
@@ -525,19 +515,19 @@ export const Dashboard = () => {
             transition={{ duration: 0.5, delay: 0.25 }}
           >
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-white">I Tuoi Budget</h2>
+              <h2 className="text-xl sm:text-2xl font-semibold text-[#080808]">I Tuoi Budget</h2>
               <Button
                 onClick={() => navigate('/budgets')}
-                variant="secondary"
+                variant="ghost"
                 size="md"
-                className="flex items-center space-x-2 bg-white/10 border border-blue-400 text-blue-400 px-3 py-2 sm:px-6 sm:py-3 rounded-lg font-medium shadow-sm hover:bg-white/20 hover:border-blue-500 w-full sm:w-auto text-sm sm:text-base"
+                className="flex items-center space-x-2 bg-white border border-[#f0f0f0] text-black px-3 py-2 sm:px-6 sm:py-3 rounded-full font-medium shadow-sm hover:bg-[#f5f5f5] hover:border-[#e5e5e5] sm:w-auto text-sm sm:text-base"
               >
-                <Target className="h-4 w-4 sm:h-5 sm:w-5" />
-                <span>Gestisci Budget</span>
+                
+                <span>Vedi tutti {'>'}</span>
               </Button>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="flex overflow-x-auto hide-scroll snap-x snap-mandatory space-x-3 -mx-4 px-4 sm:-mx-6 sm:px-6 lg:mx-0 lg:px-0 md:grid md:grid-cols-2 lg:grid-cols-3 md:space-x-0 md:gap-6 pb-4 md:pb-0">
               {(() => {
                 const expensesByCategory = getExpensesByCategory();
                 const activeBudgets = getActiveBudgets(budgets, expensesByCategory);
@@ -548,6 +538,7 @@ export const Dashboard = () => {
                   return (
                     <motion.div
                       key={category.value}
+                      className="min-w-[85vw] sm:min-w-[300px] md:min-w-0 flex-shrink-0 snap-center"
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.3, delay: index * 0.1 }}
@@ -576,19 +567,19 @@ export const Dashboard = () => {
             transition={{ duration: 0.5, delay: 0.25 }}
             className="mb-8"
           >
-            <div className="bg-gradient-to-br from-white/5 via-white/2 to-transparent backdrop-blur-sm border-2 border-dashed border-white/20 hover:border-white/30 rounded-xl p-8 text-center transition-all duration-300">
+            <div className="bg-[#f5f5f5] border-2 border-dashed border-[#f0f0f0] hover:border-[#e5e5e5] rounded-xl p-8 text-center transition-all duration-300">
               <motion.div 
-                className="w-16 h-16 bg-gradient-to-br from-green-500/20 to-green-600/20 rounded-full flex items-center justify-center mx-auto mb-6"
+                className="w-16 h-16 bg-white border border-[#f0f0f0] shadow-sm rounded-full flex items-center justify-center mx-auto mb-6"
                 animate={{ scale: [1, 1.05, 1] }}
                 transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
               >
-                <Target className="h-8 w-8 text-green-400" />
+                <Target className="h-8 w-8 text-slate-700" />
               </motion.div>
               
-              <h3 className="text-xl font-bold text-white mb-3">
+              <h3 className="text-xl font-bold text-[#080808] mb-3">
                 Inizia a gestire i tuoi budget
               </h3>
-              <p className="text-white/60 text-sm mb-6 max-w-md mx-auto">
+              <p className="text-[#080808]/60 text-sm mb-6 max-w-md mx-auto">
                 {hasExpenses 
                   ? "Hai delle spese registrate! Imposta dei limiti di spesa per le tue categorie e tieni sotto controllo le tue finanze"
                   : "Imposta dei limiti di spesa per le tue categorie e preparati a tenere sotto controllo le tue finanze"
@@ -598,7 +589,7 @@ export const Dashboard = () => {
               <div className="flex flex-col sm:flex-row gap-3 justify-center items-center">
                 <motion.button
                   onClick={() => setIsSetBudgetModalOpen(true)}
-                  className="px-6 py-3 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white rounded-xl font-semibold transition-all duration-300 flex items-center space-x-2 shadow-lg"
+                  className="px-6 py-3 bg-[#080808] hover:bg-[#080808]/80 text-white rounded-xl font-semibold transition-all duration-300 flex items-center space-x-2 shadow-sm"
                   whileHover={{ scale: 1.02, y: -1 }}
                   whileTap={{ scale: 0.98 }}
                 >

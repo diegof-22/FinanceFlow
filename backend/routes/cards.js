@@ -3,6 +3,7 @@ const router = express.Router();
 
 const admin = require('firebase-admin');
 const db = admin.firestore();
+const { getCache, setCache, invalidateCache } = require('../services/cacheService');
 
 
 async function cardExists(userEmail, cardName) {
@@ -25,10 +26,18 @@ router.get('/', async (req, res) => {
       return res.status(400).json({ error: 'User email is required' });
     }
 
+    const cacheKey = `cache:cards:${userEmail}`;
+    const cachedData = await getCache(cacheKey);
+    if (cachedData) {
+      return res.json(cachedData);
+    }
+
     console.log(`GET /api/cards - Fetching cards for user: ${userEmail}`);
     const snapshot = await db.collection('users').doc(userEmail).collection('cards').get();
     const cards = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     console.log(`Found ${cards.length} cards for user ${userEmail}`);
+    
+    await setCache(cacheKey, cards);
     res.json(cards);
   } catch (e) {
     console.error('Error in GET /api/cards:', e);
@@ -66,6 +75,8 @@ router.post('/', async (req, res) => {
     
     const docRef = await db.collection('users').doc(userEmail).collection('cards').add(cardData);
     const doc = await docRef.get();
+    
+    await invalidateCache(`cache:cards:${userEmail}`);
     
     console.log('Card created successfully:', doc.id);
     res.status(201).json({ id: doc.id, ...doc.data() });
@@ -105,6 +116,8 @@ router.patch('/:id', async (req, res) => {
     await docRef.update(updateData);
     const updatedDoc = await docRef.get();
     
+    await invalidateCache(`cache:cards:${userEmail}`);
+    
     console.log('Card updated successfully:', req.params.id);
     res.json({ id: updatedDoc.id, ...updatedDoc.data() });
   } catch (e) {
@@ -132,6 +145,9 @@ router.delete('/:id', async (req, res) => {
     }
     
     await docRef.delete();
+    
+    await invalidateCache(`cache:cards:${userEmail}`);
+    
     console.log('Card deleted successfully:', req.params.id);
     res.status(204).end();
   } catch (e) {

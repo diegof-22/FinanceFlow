@@ -31,31 +31,34 @@ export const Modal: React.FC<ModalProps> = ({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+          transition={{ duration: 0.2 }}
+          className="fixed inset-0 bg-black/20 backdrop-blur-sm z-50 flex items-center justify-center p-4 sm:p-6"
           onClick={onClose}
         >
           <motion.div
-            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+            initial={{ opacity: 0, scale: 0.95, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.9, y: 20 }}
-            className={`bg-gray-900/95 backdrop-blur-xl border border-white/20 rounded-2xl ${sizeClasses[size]} max-h-[90vh] overflow-hidden flex flex-col`}
+            exit={{ opacity: 0, scale: 0.95, y: 10 }}
+            transition={{ duration: 0.2, ease: "easeOut" }}
+            className={`bg-white border border-[#f0f0f0] rounded-2xl sm:rounded-[32px] shadow-2xl ${sizeClasses[size]} max-h-[90vh] overflow-hidden flex flex-col`}
             onClick={(e) => e.stopPropagation()}
           >
             
-            <div className="flex items-center justify-between p-6 border-b border-white/10 flex-shrink-0">
-              <h3 className="text-white font-semibold text-lg">{title}</h3>
-              <motion.button
+            <div className="flex items-center justify-between p-5 sm:p-6 lg:p-8 pb-3 sm:pb-4 flex-shrink-0">
+              <h3 className="text-[#080808] font-bold text-lg sm:text-xl lg:text-2xl">{title}</h3>
+              <button
                 onClick={onClose}
-                className="p-2 rounded-lg bg-red-500/20 hover:bg-red-500/30 transition-colors"
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
+                className="p-2.5 rounded-full bg-[#f5f5f5] hover:bg-[#e5e5e5] transition-all hover:scale-105 active:scale-95"
               >
-                <X className="h-4 w-4 text-red-400" />
-              </motion.button>
+                <X className="h-5 w-5 text-[#080808]/60" />
+              </button>
             </div>
             
-            
-            <div className="p-6 overflow-y-auto flex-1">
+            <div className="p-5 sm:p-6 lg:p-8 pt-2 overflow-y-auto flex-1 hide-scroll">
+              <style>{`
+                .hide-scroll::-webkit-scrollbar { display: none; }
+                .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; }
+              `}</style>
               {children}
             </div>
           </motion.div>

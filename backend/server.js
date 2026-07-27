@@ -1,16 +1,79 @@
-require('dotenv').config();
+const path = require('path');
+const fs = require('fs');
+const dotenv = require('dotenv');
+const envPath = path.resolve(__dirname, '.env');
+dotenv.config({ path: envPath });
+
+// Fallback: ensure critical env vars are loaded even in odd launch contexts.
+if (!process.env.FIREBASE_PROJECT_ID || !process.env.FIREBASE_CLIENT_EMAIL || !process.env.FIREBASE_PRIVATE_KEY) {
+  try {
+    if (fs.existsSync(envPath)) {
+      const raw = fs.readFileSync(envPath, 'utf8');
+      const parsed = dotenv.parse(raw);
+      process.env.FIREBASE_PROJECT_ID = process.env.FIREBASE_PROJECT_ID || parsed.FIREBASE_PROJECT_ID;
+      process.env.FIREBASE_CLIENT_EMAIL = process.env.FIREBASE_CLIENT_EMAIL || parsed.FIREBASE_CLIENT_EMAIL;
+      process.env.FIREBASE_PRIVATE_KEY = process.env.FIREBASE_PRIVATE_KEY || parsed.FIREBASE_PRIVATE_KEY;
+      process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON =
+        process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON || parsed.GOOGLE_APPLICATION_CREDENTIALS_JSON;
+    }
+  } catch (envError) {
+    console.error('Error loading backend .env file:', envError.message);
+  }
+}
 const express = require('express');
 const cors = require('cors');
 const admin = require('firebase-admin');
 const axios = require('axios');
 
 try {
+  const normalizePrivateKey = (raw) => {
+    if (!raw || typeof raw !== 'string') return '';
+
+    // Remove optional surrounding quotes and normalize escaped newlines.
+    let key = raw.trim().replace(/^"(.*)"$/, '$1').replace(/^'(.*)'$/, '$1');
+    key = key.replace(/\r/g, '').replace(/\\n/g, '\n').trim();
+
+    if (key.includes('BEGIN PRIVATE KEY')) {
+      return key;
+    }
+
+    // If only base64 body is provided, sanitize and rebuild a PEM key.
+    const body = key.replace(/\s+/g, '');
+    const chunkedBody = body.match(/.{1,64}/g)?.join('\n') || body;
+    return `-----BEGIN PRIVATE KEY-----\n${chunkedBody}\n-----END PRIVATE KEY-----\n`;
+  };
+
+  const projectId = process.env.FIREBASE_PROJECT_ID;
+  const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
+  const privateKeyRaw = process.env.FIREBASE_PRIVATE_KEY;
+  const serviceAccountJson = process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON;
+
+  let credential;
+
+  if (projectId && clientEmail && privateKeyRaw) {
+    const normalizedPrivateKey = normalizePrivateKey(privateKeyRaw);
+
+    credential = admin.credential.cert({
+      projectId,
+      clientEmail,
+      privateKey: normalizedPrivateKey,
+    });
+  } else if (serviceAccountJson) {
+    const parsed = JSON.parse(serviceAccountJson);
+    const normalizedPrivateKey = normalizePrivateKey(parsed.private_key || '');
+    credential = admin.credential.cert({
+      projectId: parsed.project_id,
+      clientEmail: parsed.client_email,
+      privateKey: normalizedPrivateKey,
+    });
+  } else {
+    throw new Error(
+      'Missing Firebase Admin env vars. Required FIREBASE_PROJECT_ID/FIREBASE_CLIENT_EMAIL/FIREBASE_PRIVATE_KEY or GOOGLE_APPLICATION_CREDENTIALS_JSON'
+    );
+  }
+
   admin.initializeApp({
-    credential: admin.credential.cert({
-      projectId: process.env.FIREBASE_PROJECT_ID,
-      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-      privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
-    })
+    credential
   });
 } catch (error) {
   console.error('Error initializing Firebase Admin:', error);
@@ -26,7 +89,9 @@ const cardsRoutes = require('./routes/cards');
 const accountsRoutes = require('./routes/accounts');
 const transactionsRoutes = require('./routes/transactions');
 const budgetsRoutes = require('./routes/budgets');
-const webpushRoutes = require('./routes/webpush');
+const marketRoutes = require('./routes/market');
+const investmentsRoutes = require('./routes/investments');
+
 
 
 app.use(cors());
@@ -75,7 +140,9 @@ app.use('/api/cards', authenticateUser, cardsRoutes);
 app.use('/api/accounts', authenticateUser, accountsRoutes);
 app.use('/api/transactions', authenticateUser, transactionsRoutes);
 app.use('/api/budgets', authenticateUser, budgetsRoutes);
-app.use('/api/webpush', authenticateUser, webpushRoutes);
+app.use('/api/market', authenticateUser, marketRoutes);
+app.use('/api/investments', authenticateUser, investmentsRoutes);
+
 
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
 
@@ -97,66 +164,9 @@ app.use('*', (req, res) => {
 });
 
 
-async function getAdminCustomToken() {
-  const adminEmail = 'test@prova.com';
-  try {
-    const userRecord = await admin.auth().getUserByEmail(adminEmail);
-    const uid = userRecord.uid;
-    const customToken = await admin.auth().createCustomToken(uid);
-    return customToken;
-  } catch (error) {
-    console.error('Errore generazione custom token:', error);
-    return null;
-  }
-}
-
-async function getIdTokenFromCustomToken(customToken) {
-  const apiKey = process.env.FIREBASE_API_KEY; 
-  const url = `https://identitytoolkit.googleapis.com/v1/accounts:signInWithCustomToken?key=${apiKey}`;
-  try {
-    const response = await axios.post(url, {
-      token: customToken,
-      returnSecureToken: true
-    });
-    return response.data.idToken;
-  } catch (error) {
-    console.error('Errore scambio custom token per ID token:', error.response?.data || error.message);
-    return null;
-  }
-}
 
 
-async function sendScheduledNotification(){
-  try {
-    const customToken = await getAdminCustomToken();
-    if (!customToken) throw new Error('Custom token non ottenuto');
-    const idToken = await getIdTokenFromCustomToken(customToken);
-    if (!idToken) throw new Error('ID token non ottenuto');
-
-    await axios.post(
-      'http://localhost:5000/api/webpush/send-all',
-      {
-        notification: {
-          title: 'Ricordati di aggiungere i nuovi pagamenti!',
-          body: 'Questa è una notifica inviata automaticamente ogni 2 minuti!',
-          url: '/dashboard'
-        }
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${idToken}`
-        }
-      }
-    );
-  } catch (error) {
-    console.error('Errore nell\'invio della notifica programmata:', error.response?.data || error.message);
-  }
-}
-
-//setInterval(sendScheduledNotification, 2* 60 * 1000);
-
-
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5001;
 app.listen(PORT, () => {
   console.log(` API running on http://localhost:${PORT}`);
 }); 
