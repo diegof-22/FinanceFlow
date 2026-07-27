@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/lib/firebase";
 
-const API_BASE_URL = "";
+const API_BASE_URL = process.env.REACT_APP_API_URL || "";
 const INITIAL_FETCH_TIMEOUT_MS = 10000;
 
 export function useFinanceData() {
