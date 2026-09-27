@@ -21,14 +21,14 @@ async function cardExists(userEmail, cardName) {
 
 router.get('/', async (req, res) => {
   try {
-    const userEmail = req.user.email;
+    const userEmail = req.user.email ? req.user.email.toLowerCase().trim() : '';
     if (!userEmail) {
       return res.status(400).json({ error: 'User email is required' });
     }
 
     const cacheKey = `cache:cards:${userEmail}`;
     const cachedData = await getCache(cacheKey);
-    if (cachedData) {
+    if (cachedData && Array.isArray(cachedData) && cachedData.length > 0) {
       return res.json(cachedData);
     }
 
@@ -37,7 +37,9 @@ router.get('/', async (req, res) => {
     const cards = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     console.log(`Found ${cards.length} cards for user ${userEmail}`);
     
-    await setCache(cacheKey, cards);
+    if (cards.length > 0) {
+      await setCache(cacheKey, cards);
+    }
     res.json(cards);
   } catch (e) {
     console.error('Error in GET /api/cards:', e);
@@ -48,7 +50,7 @@ router.get('/', async (req, res) => {
 
 router.post('/', async (req, res) => {
   try {
-    const userEmail = req.user.email;
+    const userEmail = req.user.email ? req.user.email.toLowerCase().trim() : '';
     if (!userEmail) {
       return res.status(400).json({ error: 'User email is required' });
     }
@@ -88,7 +90,7 @@ router.post('/', async (req, res) => {
 
 router.patch('/:id', async (req, res) => {
   try {
-    const userEmail = req.user.email;
+    const userEmail = req.user.email ? req.user.email.toLowerCase().trim() : '';
     if (!userEmail) {
       return res.status(400).json({ error: 'User email is required' });
     }
@@ -128,7 +130,7 @@ router.patch('/:id', async (req, res) => {
 
 router.delete('/:id', async (req, res) => {
   try {
-    const userEmail = req.user.email;
+    const userEmail = req.user.email ? req.user.email.toLowerCase().trim() : '';
     if (!userEmail) {
       return res.status(400).json({ error: 'User email is required' });
     }

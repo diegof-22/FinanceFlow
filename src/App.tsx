@@ -5,6 +5,7 @@ import { FinanceDataProvider } from "./contexts/FinanceDataContext";
 import { ErrorProvider } from './contexts/ErrorContext';
 
 import { Sidebar } from "./components/complex/SideBar";
+import { BottomNavBar } from "./components/complex/BottomNavBar";
 import { Dashboard } from "./pages/Dashboard";
 import Budgets  from "./pages/Budgets";
 import Transazioni  from "./pages/Transazioni";
@@ -21,16 +22,24 @@ import React, { useEffect, useState } from "react";
 
 
 
+const API_BASE_URL = process.env.REACT_APP_API_URL || "";
+
 const AppRouter = () => {
   const { user, isLoading } = useAuth();
+
+  useEffect(() => {
+    // Pre-warm the backend server (Render cold start) immediately on mount
+    fetch(`${API_BASE_URL}/api/health`).catch(() => {});
+  }, []);
 
   if (isLoading) {
     return (
       <SidebarProvider>
         <div className="h-screen bg-[#ffffff] overflow-hidden flex">
           <Sidebar />
-          <div className="flex-1 h-full overflow-hidden z-10 mt-8 sm:mt-0">
-            <main className="h-full overflow-y-auto overflow-x-hidden scrollbar-hide">
+          <BottomNavBar />
+          <div className="flex-1 h-full overflow-hidden z-10">
+            <main className="h-full overflow-y-auto overflow-x-hidden scrollbar-hide pt-8 pb-24 lg:pt-0 lg:pb-0">
               <DashboardSkeleton />
             </main>
           </div>
@@ -57,9 +66,10 @@ const AppRouter = () => {
             
             <div className="h-screen bg-[#ffffff] overflow-hidden flex">
               <Sidebar />
-              <div className="flex-1 h-full overflow-hidden z-10 mt-8 sm:mt-0">
+              <BottomNavBar />
+              <div className="flex-1 h-full overflow-hidden z-10">
                 <FinanceDataProvider>
-                <main className="h-full overflow-y-auto overflow-x-hidden scrollbar-hide">
+                <main className="h-full overflow-y-auto overflow-x-hidden scrollbar-hide pt-8 pb-24 lg:pt-0 lg:pb-0">
                   <Outlet />
                 </main>
                 </FinanceDataProvider>

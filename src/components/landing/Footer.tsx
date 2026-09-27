@@ -19,7 +19,7 @@ export const Footer = () => {
           
           <div className="lg:col-span-2">
             <div className="flex items-center space-x-2 mb-6 cursor-pointer">
-              <div className="bg-white/10 p-2 rounded-xl backdrop-blur-sm border border-white/5">
+              <div className="">
                 <Wallet className="w-6 h-6 text-white" />
               </div>
               <span className="text-2xl font-bold tracking-tight text-white">FinanceFlow</span>
@@ -67,13 +67,6 @@ export const Footer = () => {
           </p>
           
           
-          <div className="flex items-center space-x-2 bg-white/5 px-3 py-1.5 rounded-full border border-white/5 cursor-pointer hover:bg-white/10 transition-colors">
-            <span className="flex h-2 w-2 relative">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
-            </span>
-            <span className="text-xs font-semibold text-gray-300">Tutti i sistemi operativi</span>
-          </div>
         </div>
         
       </div>

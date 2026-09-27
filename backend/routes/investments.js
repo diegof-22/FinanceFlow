@@ -6,17 +6,19 @@ const { getCache, setCache, invalidateCache } = require('../services/cacheServic
 
 router.get('/', async (req, res) => {
   try {
-    const userEmail = req.user.email;
+    const userEmail = req.user.email ? req.user.email.toLowerCase().trim() : '';
     if (!userEmail) return res.status(400).json({ error: 'User email is required' });
 
     const cacheKey = `cache:investments:${userEmail}`;
     const cachedData = await getCache(cacheKey);
-    if (cachedData) return res.json(cachedData);
+    if (cachedData && Array.isArray(cachedData) && cachedData.length > 0) return res.json(cachedData);
 
     const snapshot = await db.collection('users').doc(userEmail).collection('investments').get();
     const investments = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     
-    await setCache(cacheKey, investments);
+    if (investments.length > 0) {
+      await setCache(cacheKey, investments);
+    }
     res.json(investments);
   } catch (e) {
     res.status(500).json({ error: e.message });
@@ -25,7 +27,7 @@ router.get('/', async (req, res) => {
 
 router.post('/', async (req, res) => {
   try {
-    const userEmail = req.user.email;
+    const userEmail = req.user.email ? req.user.email.toLowerCase().trim() : '';
     const { assetId, symbol, name, type, amount, entryPrice, date } = req.body;
     
     const investmentData = {
@@ -48,7 +50,7 @@ router.post('/', async (req, res) => {
 
 router.delete('/:id', async (req, res) => {
   try {
-    const userEmail = req.user.email;
+    const userEmail = req.user.email ? req.user.email.toLowerCase().trim() : '';
     const docRef = db.collection('users').doc(userEmail).collection('investments').doc(req.params.id);
     const doc = await docRef.get();
     

@@ -13,9 +13,9 @@ export const FeatureGrid = () => {
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-[#080808] max-w-lg leading-tight"
+            className="text-4xl md:text-5xl lg:text-6xl  tracking-tight text-[#080808] max-w-lg leading-tight"
           >
-            Pensato per la tua libertà finanziaria
+            Pensato per la tua <span className="text-red-500">libertà finanziaria</span>
           </motion.h2>
           
           <motion.p 

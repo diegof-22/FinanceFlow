@@ -59,9 +59,7 @@ export const QuickActionCard: React.FC<QuickActionCardProps> = ({
         bg-transparent sm:bg-white 
         border border-transparent sm:border-[#f0f0f0]
         hover:bg-[#f9f9f9] sm:hover:bg-[#f5f5f5] sm:hover:border-[#e5e5e5]
-        rounded-[24px] sm:rounded-xl 
-        transition-all duration-300 ease-out
-        sm:hover:shadow-sm
+        rounded-[24px] sm:rounded-3xl 
       `}
       whileHover={{ scale: 1.02, y: -2 }}
       whileTap={{ scale: 0.98 }}
@@ -72,8 +70,6 @@ export const QuickActionCard: React.FC<QuickActionCardProps> = ({
           w-14 h-14 sm:w-auto sm:h-auto sm:p-3 
           rounded-full sm:rounded-lg 
           ${currentColor.icon}
-          transition-all duration-300
-          group-hover:scale-110
           mb-2 sm:mb-0
         `}>
           <Icon className="h-6 w-6 sm:h-5 sm:w-5" />

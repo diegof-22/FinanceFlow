@@ -113,7 +113,7 @@ export const AddCardModal: React.FC<AddCardModalProps> = ({
                 placeholder="Visa Gold"
                 value={formData.cardName}
                 onChange={(e) => setFormData({ ...formData, cardName: e.target.value })}
-                className="bg-[#f9f9f9] border border-[#e5e5e5] text-[#080808] placeholder:text-[#080808]/40 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#080808]/20 focus:ring-2 focus:ring-[#080808]/5 shadow-sm"
+                className="bg-[#f9f9f9] border border-[#e5e5e5] text-[#080808] placeholder:text-[#080808]/40 rounded-xl px-3 py-2 text-base sm:text-sm focus:outline-none focus:border-[#080808]/20 focus:ring-2 focus:ring-[#080808]/5 shadow-sm"
                 required
               />
             </div>

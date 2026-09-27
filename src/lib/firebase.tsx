@@ -140,10 +140,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser: FirebaseUser | null) => {
       if (firebaseUser) {
+        const normalizedEmail = (firebaseUser.email || '').toLowerCase().trim();
         const userData: User = {
           id: firebaseUser.uid,
-          email: firebaseUser.email || '',
-          name: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'Utente',
+          email: normalizedEmail,
+          name: firebaseUser.displayName || normalizedEmail.split('@')[0] || 'Utente',
           avatar: firebaseUser.photoURL || undefined,
           firebaseUser
         };
@@ -172,12 +173,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
       if (!isValidEmail(email)) {
         throw { code: 'auth/invalid-email', message: 'Formato email non valido' };
       }
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const normalizedEmail = email.toLowerCase().trim();
+      const userCredential = await signInWithEmailAndPassword(auth, normalizedEmail, password);
       const firebaseUser = userCredential.user;
       const userData: User = {
         id: firebaseUser.uid,
-        email: firebaseUser.email || email,
-        name: firebaseUser.displayName || email.split('@')[0] || 'Utente',
+        email: normalizedEmail,
+        name: firebaseUser.displayName || normalizedEmail.split('@')[0] || 'Utente',
         avatar: firebaseUser.photoURL || undefined,
         firebaseUser
       };
@@ -198,12 +200,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const register = async (email: string, password: string, name?: string): Promise<void> => {
     setIsLoading(true);
     try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const normalizedEmail = email.toLowerCase().trim();
+      const userCredential = await createUserWithEmailAndPassword(auth, normalizedEmail, password);
       const firebaseUser = userCredential.user;
       const userData: User = {
         id: firebaseUser.uid,
-        email: firebaseUser.email || email,
-        name: name || firebaseUser.displayName || email.split('@')[0] || 'Utente',
+        email: normalizedEmail,
+        name: name || firebaseUser.displayName || normalizedEmail.split('@')[0] || 'Utente',
         avatar: firebaseUser.photoURL || undefined,
         firebaseUser
       };
@@ -228,11 +231,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
     try {
       const result = await signInWithPopup(auth, googleProvider);
       const firebaseUser = result.user;
+      const normalizedEmail = (firebaseUser.email || '').toLowerCase().trim();
 
       const userData: User = {
         id: firebaseUser.uid,
-        email: firebaseUser.email || '',
-        name: firebaseUser.displayName || 'Utente Google',
+        email: normalizedEmail,
+        name: firebaseUser.displayName || normalizedEmail.split('@')[0] || 'Utente Google',
         avatar: firebaseUser.photoURL || undefined,
         firebaseUser
       };
@@ -256,11 +260,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
     try {
       const result = await signInWithPopup(auth, githubProvider);
       const firebaseUser = result.user;
+      const normalizedEmail = (firebaseUser.email || '').toLowerCase().trim();
 
       const userData: User = {
         id: firebaseUser.uid,
-        email: firebaseUser.email || '',
-        name: firebaseUser.displayName || 'Utente GitHub',
+        email: normalizedEmail,
+        name: firebaseUser.displayName || normalizedEmail.split('@')[0] || 'Utente GitHub',
         avatar: firebaseUser.photoURL || undefined,
         firebaseUser
       };

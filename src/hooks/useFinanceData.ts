@@ -2,19 +2,87 @@ import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/lib/firebase";
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || "";
-const INITIAL_FETCH_TIMEOUT_MS = 10000;
+// 45s to allow Render cold start to wake up without timing out prematurely
+const INITIAL_FETCH_TIMEOUT_MS = 45000;
+
+interface LocalFinanceCache {
+  cards?: any[];
+  accounts?: any[];
+  transactions?: any[];
+  budgets?: any[];
+  investments?: any[];
+  updatedAt?: number;
+}
+
+const getLocalFinanceCache = (email?: string): LocalFinanceCache | null => {
+  if (!email) return null;
+  try {
+    const raw = localStorage.getItem(`finance_flow_cache_${email.toLowerCase().trim()}`);
+    if (raw) return JSON.parse(raw);
+  } catch (e) {
+    console.error("Error reading finance cache from localStorage:", e);
+  }
+  return null;
+};
+
+const setLocalFinanceCache = (
+  email: string,
+  partialData: {
+    cards?: any[];
+    accounts?: any[];
+    transactions?: any[];
+    budgets?: any[];
+    investments?: any[];
+  }
+) => {
+  if (!email) return;
+  try {
+    const key = `finance_flow_cache_${email.toLowerCase().trim()}`;
+    const raw = localStorage.getItem(key);
+    const existing = raw ? JSON.parse(raw) : {};
+    const updated = {
+      ...existing,
+      ...Object.fromEntries(Object.entries(partialData).filter(([_, v]) => v !== undefined)),
+      updatedAt: Date.now()
+    };
+    localStorage.setItem(key, JSON.stringify(updated));
+  } catch (e) {
+    console.error("Error saving finance cache to localStorage:", e);
+  }
+};
 
 export function useFinanceData() {
-  const [cards, setCards] = useState<any[]>([]);
-  const [accounts, setAccounts] = useState<any[]>([]);
-  const [transactions, setTransactions] = useState<any[]>([]);
-  const [budgets, setBudgetsState] = useState<any[]>([]);
-  const [investments, setInvestments] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [dataLoaded, setDataLoaded] = useState(false);
-
   const { user, isLoading: authLoading } = useAuth();
+  const userEmail = user?.email ? user.email.toLowerCase().trim() : "";
 
+  // Instant local cache initialization so data is available with 0ms delay on mount
+  const initialCache = getLocalFinanceCache(userEmail);
+
+  const [cards, setCards] = useState<any[]>(() => initialCache?.cards || []);
+  const [accounts, setAccounts] = useState<any[]>(() => initialCache?.accounts || []);
+  const [transactions, setTransactions] = useState<any[]>(() => initialCache?.transactions || []);
+  const [budgets, setBudgetsState] = useState<any[]>(() => initialCache?.budgets || []);
+  const [investments, setInvestments] = useState<any[]>(() => initialCache?.investments || []);
+
+  const hasCachedData = Boolean(
+    initialCache &&
+    ((initialCache.cards && initialCache.cards.length > 0) ||
+     (initialCache.accounts && initialCache.accounts.length > 0))
+  );
+
+  // If we already have cached data, we don't block the UI with a skeleton
+  const [isLoading, setIsLoading] = useState<boolean>(!hasCachedData);
+  const [dataLoaded, setDataLoaded] = useState<boolean>(false);
+
+  const deduplicateTransactions = (txs: any[]): any[] => {
+    return [...txs].sort((a, b) => {
+      const dateA = new Date(a.createdAt || a.date || 0).getTime();
+      const dateB = new Date(b.createdAt || b.date || 0).getTime();
+      return dateB - dateA;
+    });
+  };
+
+  // Synchronize state when user logs in or changes
   useEffect(() => {
     if (!authLoading && !user) {
       setCards([]);
@@ -24,6 +92,18 @@ export function useFinanceData() {
       setInvestments([]);
       setDataLoaded(false);
       setIsLoading(false);
+    } else if (user?.email) {
+      const cached = getLocalFinanceCache(user.email);
+      if (cached) {
+        if (Array.isArray(cached.cards)) setCards(cached.cards);
+        if (Array.isArray(cached.accounts)) setAccounts(cached.accounts);
+        if (Array.isArray(cached.transactions)) setTransactions(deduplicateTransactions(cached.transactions));
+        if (Array.isArray(cached.budgets)) setBudgetsState(cached.budgets);
+        if (Array.isArray(cached.investments)) setInvestments(cached.investments);
+        if ((cached.cards && cached.cards.length > 0) || (cached.accounts && cached.accounts.length > 0)) {
+          setIsLoading(false);
+        }
+      }
     }
   }, [user, authLoading]);
 
@@ -55,21 +135,19 @@ export function useFinanceData() {
     return {};
   }, [user]);
 
-  const deduplicateTransactions = (transactions: any[]): any[] => {
-    return [...transactions].sort((a, b) => {
-      const dateA = new Date(a.createdAt || a.date || 0).getTime();
-      const dateB = new Date(b.createdAt || b.date || 0).getTime();
-      return dateB - dateA;
-    });
-  };
-
+  // Load fresh data from the server in the background (SWR pattern)
   useEffect(() => {
     if (authLoading || !user || dataLoaded) return;
 
     let isMounted = true;
 
     const loadData = async () => {
-      setIsLoading(true);
+      const cached = getLocalFinanceCache(user.email);
+      const hasExistingItems = cached && ((cached.cards && cached.cards.length > 0) || (cached.accounts && cached.accounts.length > 0));
+      if (!hasExistingItems) {
+        setIsLoading(true);
+      }
+
       try {
         const headers = await getAuthHeaders();
         if (Object.keys(headers).length === 0) {
@@ -78,37 +156,45 @@ export function useFinanceData() {
         }
 
         const [c, a, t, b, i] = await Promise.all([
-          fetchWithTimeout(`${API_BASE_URL}/api/cards`, { headers }).then(r => r.ok ? r.json() : []),
-          fetchWithTimeout(`${API_BASE_URL}/api/accounts`, { headers }).then(r => r.ok ? r.json() : []),
-          fetchWithTimeout(`${API_BASE_URL}/api/transactions`, { headers }).then(r => r.ok ? r.json() : []),
-          fetchWithTimeout(`${API_BASE_URL}/api/budgets`, { headers }).then(r => r.ok ? r.json() : []),
-          fetchWithTimeout(`${API_BASE_URL}/api/investments`, { headers }).then(r => r.ok ? r.json() : []),
+          fetchWithTimeout(`${API_BASE_URL}/api/cards`, { headers }).then(r => r.ok ? r.json() : null),
+          fetchWithTimeout(`${API_BASE_URL}/api/accounts`, { headers }).then(r => r.ok ? r.json() : null),
+          fetchWithTimeout(`${API_BASE_URL}/api/transactions`, { headers }).then(r => r.ok ? r.json() : null),
+          fetchWithTimeout(`${API_BASE_URL}/api/budgets`, { headers }).then(r => r.ok ? r.json() : null),
+          fetchWithTimeout(`${API_BASE_URL}/api/investments`, { headers }).then(r => r.ok ? r.json() : null),
         ]);
 
         if (!isMounted) return;
 
-        setCards(Array.isArray(c) ? c : []);
-        setAccounts(Array.isArray(a) ? a : []);
-        setTransactions(deduplicateTransactions(Array.isArray(t) ? t : []));
-        setBudgetsState(Array.isArray(b) ? b : []);
-        setInvestments(Array.isArray(i) ? i : []);
+        if (Array.isArray(c)) setCards(c);
+        if (Array.isArray(a)) setAccounts(a);
+        if (Array.isArray(t)) setTransactions(deduplicateTransactions(t));
+        if (Array.isArray(b)) setBudgetsState(b);
+        if (Array.isArray(i)) setInvestments(i);
+
+        if (user.email) {
+          setLocalFinanceCache(user.email, {
+            cards: Array.isArray(c) ? c : undefined,
+            accounts: Array.isArray(a) ? a : undefined,
+            transactions: Array.isArray(t) ? t : undefined,
+            budgets: Array.isArray(b) ? b : undefined,
+            investments: Array.isArray(i) ? i : undefined,
+          });
+        }
         setDataLoaded(true);
       } catch (error) {
-        console.error("Error loading data:", error);
-
-        if (isMounted) setDataLoaded(true); 
+        console.error("Error loading data from backend:", error);
+        if (isMounted) setDataLoaded(true);
       } finally {
         if (isMounted) setIsLoading(false);
       }
     };
-    
+
     loadData();
 
     return () => {
       isMounted = false;
     };
   }, [user, authLoading, dataLoaded, getAuthHeaders]);
-
 
   const apiRequest = async (url: string, method: string, body?: any) => {
     const headers = await getAuthHeaders();
@@ -129,33 +215,49 @@ export function useFinanceData() {
   const addCard = async (card: any) => {
     try {
       const saved = await apiRequest(`${API_BASE_URL}/api/cards`, "POST", card);
-      setCards(prev => [...prev, saved]);
+      setCards(prev => {
+        const next = [...prev, saved];
+        if (userEmail) setLocalFinanceCache(userEmail, { cards: next });
+        return next;
+      });
       return true;
     } catch (e) {
-      console.error(e);
+      console.error("Error adding card:", e);
       return false;
     }
   };
 
   const updateCard = async (id: string, updates: any) => {
     try {
-      setCards(prev => prev.map(e => e.id === id ? { ...e, ...updates } : e));
+      setCards(prev => {
+        const next = prev.map(e => e.id === id ? { ...e, ...updates } : e);
+        if (userEmail) setLocalFinanceCache(userEmail, { cards: next });
+        return next;
+      });
       const saved = await apiRequest(`${API_BASE_URL}/api/cards/${id}`, "PATCH", updates);
-      setCards(prev => prev.map(e => e.id === id ? saved : e));
+      setCards(prev => {
+        const next = prev.map(e => e.id === id ? saved : e);
+        if (userEmail) setLocalFinanceCache(userEmail, { cards: next });
+        return next;
+      });
       return true;
     } catch (e) {
-      console.error(e);
+      console.error("Error updating card:", e);
       return false;
     }
   };
 
   const deleteCard = async (id: string) => {
     try {
-      setCards(prev => prev.filter(e => e.id !== id));
+      setCards(prev => {
+        const next = prev.filter(e => e.id !== id);
+        if (userEmail) setLocalFinanceCache(userEmail, { cards: next });
+        return next;
+      });
       await apiRequest(`${API_BASE_URL}/api/cards/${id}`, "DELETE");
       return true;
     } catch (e) {
-      console.error(e);
+      console.error("Error deleting card:", e);
       return false;
     }
   };
@@ -163,33 +265,49 @@ export function useFinanceData() {
   const addAccount = async (account: any) => {
     try {
       const saved = await apiRequest(`${API_BASE_URL}/api/accounts`, "POST", account);
-      setAccounts(prev => [...prev, saved]);
+      setAccounts(prev => {
+        const next = [...prev, saved];
+        if (userEmail) setLocalFinanceCache(userEmail, { accounts: next });
+        return next;
+      });
       return true;
     } catch (e) {
-      console.error(e);
+      console.error("Error adding account:", e);
       return false;
     }
   };
 
   const updateAccount = async (id: string, updates: any) => {
     try {
-      setAccounts(prev => prev.map(e => e.id === id ? { ...e, ...updates } : e));
+      setAccounts(prev => {
+        const next = prev.map(e => e.id === id ? { ...e, ...updates } : e);
+        if (userEmail) setLocalFinanceCache(userEmail, { accounts: next });
+        return next;
+      });
       const saved = await apiRequest(`${API_BASE_URL}/api/accounts/${id}`, "PATCH", updates);
-      setAccounts(prev => prev.map(e => e.id === id ? saved : e));
+      setAccounts(prev => {
+        const next = prev.map(e => e.id === id ? saved : e);
+        if (userEmail) setLocalFinanceCache(userEmail, { accounts: next });
+        return next;
+      });
       return true;
     } catch (e) {
-      console.error(e);
+      console.error("Error updating account:", e);
       return false;
     }
   };
 
   const deleteAccount = async (id: string) => {
     try {
-      setAccounts(prev => prev.filter(e => e.id !== id));
+      setAccounts(prev => {
+        const next = prev.filter(e => e.id !== id);
+        if (userEmail) setLocalFinanceCache(userEmail, { accounts: next });
+        return next;
+      });
       await apiRequest(`${API_BASE_URL}/api/accounts/${id}`, "DELETE");
       return true;
     } catch (e) {
-      console.error(e);
+      console.error("Error deleting account:", e);
       return false;
     }
   };
@@ -215,10 +333,14 @@ export function useFinanceData() {
       }
       
       const saved = await apiRequest(`${API_BASE_URL}/api/transactions`, "POST", transaction);
-      setTransactions(prev => deduplicateTransactions([saved, ...prev]));
+      setTransactions(prev => {
+        const next = deduplicateTransactions([saved, ...prev]);
+        if (userEmail) setLocalFinanceCache(userEmail, { transactions: next });
+        return next;
+      });
       return true;
     } catch (e) {
-      console.error(e);
+      console.error("Error adding transaction:", e);
       return false;
     }
   };
@@ -245,12 +367,20 @@ export function useFinanceData() {
         }
       }
 
-      setTransactions(prev => prev.map(e => e.id === id ? { ...e, ...updates } : e));
+      setTransactions(prev => {
+        const next = prev.map(e => e.id === id ? { ...e, ...updates } : e);
+        if (userEmail) setLocalFinanceCache(userEmail, { transactions: next });
+        return next;
+      });
       const saved = await apiRequest(`${API_BASE_URL}/api/transactions/${id}`, "PATCH", updates);
-      setTransactions(prev => prev.map(e => e.id === id ? saved : e));
+      setTransactions(prev => {
+        const next = prev.map(e => e.id === id ? saved : e);
+        if (userEmail) setLocalFinanceCache(userEmail, { transactions: next });
+        return next;
+      });
       return true;
     } catch (e) {
-      console.error(e);
+      console.error("Error updating transaction:", e);
       return false;
     }
   };
@@ -269,11 +399,15 @@ export function useFinanceData() {
           await updateSourceBalance(source, newBalance);
         }
       }
-      setTransactions(prev => prev.filter(e => e.id !== id));
+      setTransactions(prev => {
+        const next = prev.filter(e => e.id !== id);
+        if (userEmail) setLocalFinanceCache(userEmail, { transactions: next });
+        return next;
+      });
       await apiRequest(`${API_BASE_URL}/api/transactions/${id}`, "DELETE");
       return true;
     } catch (e) {
-      console.error(e);
+      console.error("Error deleting transaction:", e);
       return false;
     }
   };
@@ -281,33 +415,49 @@ export function useFinanceData() {
   const addBudget = async (budget: any) => {
     try {
       const saved = await apiRequest(`${API_BASE_URL}/api/budgets`, "POST", budget);
-      setBudgetsState(prev => [...prev, saved]);
+      setBudgetsState(prev => {
+        const next = [...prev, saved];
+        if (userEmail) setLocalFinanceCache(userEmail, { budgets: next });
+        return next;
+      });
       return true;
     } catch (e) {
-      console.error(e);
+      console.error("Error adding budget:", e);
       return false;
     }
   };
 
   const updateBudget = async (id: string, updates: any) => {
     try {
-      setBudgetsState(prev => prev.map(e => e.id === id ? { ...e, ...updates } : e));
+      setBudgetsState(prev => {
+        const next = prev.map(e => e.id === id ? { ...e, ...updates } : e);
+        if (userEmail) setLocalFinanceCache(userEmail, { budgets: next });
+        return next;
+      });
       const saved = await apiRequest(`${API_BASE_URL}/api/budgets/${id}`, "PATCH", updates);
-      setBudgetsState(prev => prev.map(e => e.id === id ? saved : e));
+      setBudgetsState(prev => {
+        const next = prev.map(e => e.id === id ? saved : e);
+        if (userEmail) setLocalFinanceCache(userEmail, { budgets: next });
+        return next;
+      });
       return true;
     } catch (e) {
-      console.error(e);
+      console.error("Error updating budget:", e);
       return false;
     }
   };
 
   const deleteBudget = async (id: string) => {
     try {
-      setBudgetsState(prev => prev.filter(e => e.id !== id));
+      setBudgetsState(prev => {
+        const next = prev.filter(e => e.id !== id);
+        if (userEmail) setLocalFinanceCache(userEmail, { budgets: next });
+        return next;
+      });
       await apiRequest(`${API_BASE_URL}/api/budgets/${id}`, "DELETE");
       return true;
     } catch (e) {
-      console.error(e);
+      console.error("Error deleting budget:", e);
       return false;
     }
   };
@@ -315,24 +465,33 @@ export function useFinanceData() {
   const addInvestment = async (investment: any) => {
     try {
       const saved = await apiRequest(`${API_BASE_URL}/api/investments`, "POST", investment);
-      setInvestments(prev => [...prev, saved]);
+      setInvestments(prev => {
+        const next = [...prev, saved];
+        if (userEmail) setLocalFinanceCache(userEmail, { investments: next });
+        return next;
+      });
       return true;
     } catch (e) {
-      console.error(e);
+      console.error("Error adding investment:", e);
       return false;
     }
   };
 
   const deleteInvestment = async (id: string) => {
     try {
-      setInvestments(prev => prev.filter(e => e.id !== id));
+      setInvestments(prev => {
+        const next = prev.filter(e => e.id !== id);
+        if (userEmail) setLocalFinanceCache(userEmail, { investments: next });
+        return next;
+      });
       await apiRequest(`${API_BASE_URL}/api/investments/${id}`, "DELETE");
       return true;
     } catch (e) {
-      console.error(e);
+      console.error("Error deleting investment:", e);
       return false;
     }
   };
+
   const setBudgetForCategory = async (category: string, limit: number): Promise<boolean> => {
     const existing = budgets.find(b => b.category === category);
     if (existing) {

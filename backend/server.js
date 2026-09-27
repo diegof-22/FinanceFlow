@@ -115,10 +115,11 @@ const authenticateUser = async (req, res, next) => {
     const token = authHeader.split('Bearer ')[1];
     const decodedToken = await auth.verifyIdToken(token);
     
+    const normalizedEmail = decodedToken.email ? decodedToken.email.toLowerCase().trim() : '';
     req.user = {
       uid: decodedToken.uid,
-      email: decodedToken.email,
-      name: decodedToken.name || decodedToken.email?.split('@')[0]
+      email: normalizedEmail,
+      name: decodedToken.name || normalizedEmail.split('@')[0] || 'Utente'
     };
 
     next();

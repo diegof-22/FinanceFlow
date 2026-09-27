@@ -57,7 +57,7 @@ export const NoCardorAccounts = () => {
           transition={{ duration: 0.6, ease: "easeOut" }}
         >
           <div className="relative">
-            <h1 className="text-3xl lg:text-4xl font-bold text-[#080808] mb-3">
+            <h1 className="text-4xl lg:text-5xl font-bold text-[#080808] mb-3">
               Benvenuto, {user?.name}! 
             </h1>
             <p className="text-[#080808]/60 text-base lg:text-lg max-w-2xl mx-auto">

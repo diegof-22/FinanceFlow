@@ -277,7 +277,7 @@ export const Dashboard = () => {
         >
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl sm:text-3xl font-medium text-[#080808] mb-1">
+              <h1 className="text-3xl sm:text-4xl font-medium text-[#080808] mb-1">
                 Benvenuto, <span className="font-semibold">{user?.name}</span>! 
               </h1>
               <p className="text-[#080808]/70 text-sm sm:text-base">

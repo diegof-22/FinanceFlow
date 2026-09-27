@@ -49,11 +49,12 @@ export default function LoginForm() {
     setIsLoading(true);
     clearError();
 
+    const emailToUse = formData.email.toLowerCase().trim();
     try {
       if (isLogin) {
-        await login(formData.email, formData.password);
+        await login(emailToUse, formData.password);
       } else {
-        const exists = await checkEmailExists(formData.email);
+        const exists = await checkEmailExists(emailToUse);
         if (exists) {
           setError(
             <div className="flex flex-col space-y-1">
@@ -86,7 +87,7 @@ export default function LoginForm() {
           setIsLoading(false);
           return;
         }
-        await register(formData.email, formData.password);
+        await register(emailToUse, formData.password);
       }
     } catch (error: any) {
       console.log('Errore login:', error);

@@ -20,14 +20,14 @@ async function budgetExists(userEmail, category) {
 
 router.get('/', async (req, res) => {
   try {
-    const userEmail = req.user.email;
+    const userEmail = req.user.email ? req.user.email.toLowerCase().trim() : '';
     if (!userEmail) {
       return res.status(400).json({ error: 'User email is required' });
     }
 
     const cacheKey = `cache:budgets:${userEmail}`;
     const cachedData = await getCache(cacheKey);
-    if (cachedData) {
+    if (cachedData && Array.isArray(cachedData) && cachedData.length > 0) {
       return res.json(cachedData);
     }
 
@@ -36,7 +36,9 @@ router.get('/', async (req, res) => {
     const budgets = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     console.log(`Found ${budgets.length} budgets for user ${userEmail}`);
     
-    await setCache(cacheKey, budgets);
+    if (budgets.length > 0) {
+      await setCache(cacheKey, budgets);
+    }
     res.json(budgets);
   } catch (e) {
     console.error('Error in GET /api/budgets:', e);
@@ -47,7 +49,7 @@ router.get('/', async (req, res) => {
 
 router.post('/', async (req, res) => {
   try {
-    const userEmail = req.user.email;
+    const userEmail = req.user.email ? req.user.email.toLowerCase().trim() : '';
     if (!userEmail) {
       return res.status(400).json({ error: 'User email is required' });
     }
@@ -88,7 +90,7 @@ router.post('/', async (req, res) => {
 
 router.patch('/:id', async (req, res) => {
   try {
-    const userEmail = req.user.email;
+    const userEmail = req.user.email ? req.user.email.toLowerCase().trim() : '';
     if (!userEmail) {
       return res.status(400).json({ error: 'User email is required' });
     }
@@ -130,7 +132,7 @@ router.patch('/:id', async (req, res) => {
 
 router.delete('/:id', async (req, res) => {
   try {
-    const userEmail = req.user.email;
+    const userEmail = req.user.email ? req.user.email.toLowerCase().trim() : '';
     if (!userEmail) {
       return res.status(400).json({ error: 'User email is required' });
     }
