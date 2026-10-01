@@ -47,6 +47,9 @@ export const db = getFirestore(app);
 export const googleProvider = new GoogleAuthProvider();
 export const githubProvider = new GithubAuthProvider();
 
+googleProvider.setCustomParameters({
+  prompt: 'select_account'
+});
 
 googleProvider.addScope('email');
 googleProvider.addScope('profile');
@@ -102,13 +105,19 @@ const getFirebaseErrorMessage = (errorCode: string): string => {
     case 'auth/cancelled-popup-request':
       return 'Richiesta di login annullata';
     case 'auth/popup-blocked':
-      return 'Popup bloccato dal browser';
+      return 'Popup bloccato dal browser. Abilita i popup per accedere';
     case 'auth/too-many-requests':
       return 'Troppi tentativi falliti. Riprova più tardi';
     case 'auth/network-request-failed':
       return 'Errore di connessione. Controlla la tua connessione internet';
     case 'auth/invalid-credential':
       return 'Credenziali non valide o account non esistente';
+    case 'auth/account-exists-with-different-credential':
+      return 'Esiste già un account con questa email associato a un altro metodo di accesso. Accedi con email/password o il metodo originale.';
+    case 'auth/unauthorized-domain':
+      return 'Dominio non autorizzato per l\'autenticazione OAuth in Firebase Console';
+    case 'auth/operation-not-allowed':
+      return 'Metodo di autenticazione non abilitato in Firebase Console';
     default:
       return 'Errore durante l\'autenticazione';
   }
@@ -164,7 +173,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
 
   const login = async (email: string, password: string): Promise<void> => {
-    setIsLoading(true);
     try {
 
       if (!email || !password) {
@@ -191,14 +199,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
       const code = error.code || 'auth/unknown';
       const message = getFirebaseErrorMessage(code) || error.message || 'Errore sconosciuto';
       throw { code, message };
-    } finally {
-      setIsLoading(false);
     }
   };
 
 
   const register = async (email: string, password: string, name?: string): Promise<void> => {
-    setIsLoading(true);
     try {
       const normalizedEmail = email.toLowerCase().trim();
       const userCredential = await createUserWithEmailAndPassword(auth, normalizedEmail, password);
@@ -220,14 +225,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
         throw new Error('Email già in uso');
       }
       throw new Error(getFirebaseErrorMessage(error.code));
-    } finally {
-      setIsLoading(false);
     }
   };
 
   const loginWithGoogle = async (): Promise<void> => {
-    setIsLoading(true);
-
     try {
       const result = await signInWithPopup(auth, googleProvider);
       const firebaseUser = result.user;
@@ -247,16 +248,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
       localStorage.setItem('user', JSON.stringify(serializableUser));
 
     } catch (error: any) {
-
       throw new Error(getFirebaseErrorMessage(error.code) || 'Errore durante l\'accesso con Google');
-    } finally {
-      setIsLoading(false);
     }
   };
 
   const loginWithGithub = async (): Promise<void> => {
-    setIsLoading(true);
-
     try {
       const result = await signInWithPopup(auth, githubProvider);
       const firebaseUser = result.user;
@@ -278,8 +274,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
     } catch (error: any) {
       console.error('GitHub login error:', error);
       throw new Error(getFirebaseErrorMessage(error.code) || 'Errore durante l\'accesso con GitHub');
-    } finally {
-      setIsLoading(false);
     }
   };
 
